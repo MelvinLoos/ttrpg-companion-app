@@ -95,19 +95,6 @@ alter table "public"."sessions" add constraint "sessions_gm_id_fkey" FOREIGN KEY
 
 alter table "public"."sessions" validate constraint "sessions_gm_id_fkey";
 
-set check_function_bodies = off;
-
-CREATE OR REPLACE FUNCTION public.touch_updated_at()
- RETURNS trigger
- LANGUAGE plpgsql
-AS $function$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$function$
-;
-
 grant delete on table "public"."premade_characters" to "anon";
 
 grant insert on table "public"."premade_characters" to "anon";
@@ -324,11 +311,5 @@ for all
 to public
 using ((gm_id = auth.uid()));
 
-
-CREATE TRIGGER touch_premade_updated_at BEFORE UPDATE ON public.premade_characters FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
-
-CREATE TRIGGER touch_session_characters_updated_at BEFORE UPDATE ON public.session_characters FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
-
-CREATE TRIGGER touch_sessions_updated_at BEFORE UPDATE ON public.sessions FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
 
