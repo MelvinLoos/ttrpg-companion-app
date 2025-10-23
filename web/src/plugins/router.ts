@@ -1,19 +1,32 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import GmLayout from '../views/Gm/GmLayout.vue'
 import LobbyView from '../components/LobbyView.vue'
 import ScreenLayout from '../views/Screen/ScreenLayout.vue'
 import JoinLayout from '../views/Join/JoinLayout.vue'
+import SignInView from '../views/SignInView.vue'
 
 const routes: RouteRecordRaw[] = [
   {
+    path: '/sign-in',
+    name: 'sign-in',
+    component: SignInView
+  },
+  {
     path: '/gm',
-    component: () => GmLayout,
+    component: GmLayout,
+    meta: { requiresAuth: true },
     children: [
       {
         path: '',
         name: 'gm-lobby',
-        component: () => LobbyView,
+        component: LobbyView,
+      },
+      {
+        path: 'sessions',
+        name: 'gm-sessions',
+        component: () => import('../views/Gm/SessionsView.vue')
       },
       {
         path: 'combat',
@@ -24,13 +37,17 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/screen/:session_id',
-    component: () => ScreenLayout,
+    component: ScreenLayout,
     children: []
   },
   {
     path: '/join/:session_id',
-    component: () => JoinLayout,
+    component: JoinLayout,
     children: []
+  },
+  {
+    path: '/',
+    redirect: '/gm'
   },
   {
     path: '/:pathMatch(.*)*',
@@ -41,4 +58,13 @@ const routes: RouteRecordRaw[] = [
 export const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// Navigation guard for protected routes
+router.beforeEach(async (to) => {
+  const authStore = useAuthStore()
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return { name: 'sign-in', query: { redirect: to.fullPath } }
+  }
 })
