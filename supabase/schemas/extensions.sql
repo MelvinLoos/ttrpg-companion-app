@@ -1,1 +1,1 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+create extension "uuid-ossp" with schema extensions;

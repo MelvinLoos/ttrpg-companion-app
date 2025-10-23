@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
+
 create table "public"."premade_characters" (
     "id" uuid not null default uuid_generate_v4(),
     "gm_id" uuid,
