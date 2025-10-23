@@ -5,8 +5,20 @@ ALTER TABLE public.session_characters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.session_assets ENABLE ROW LEVEL SECURITY;
 
 -- Session policies
-CREATE POLICY "sessions_owner" ON public.sessions
-  FOR ALL USING (gm_id = auth.uid());
+DROP POLICY IF EXISTS "sessions_owner" ON public.sessions;
+
+CREATE POLICY "sessions_owner_read" ON public.sessions
+  FOR SELECT USING (gm_id = auth.uid());
+
+CREATE POLICY "sessions_owner_insert" ON public.sessions
+  FOR INSERT WITH CHECK (gm_id = auth.uid());
+
+CREATE POLICY "sessions_owner_update" ON public.sessions
+  FOR UPDATE USING (gm_id = auth.uid())
+  WITH CHECK (gm_id = auth.uid());
+
+CREATE POLICY "sessions_owner_delete" ON public.sessions
+  FOR DELETE USING (gm_id = auth.uid());
 
 -- Character policies
 CREATE POLICY "characters_owner" ON public.premade_characters
