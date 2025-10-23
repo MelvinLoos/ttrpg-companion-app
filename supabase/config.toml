@@ -1,0 +1,9 @@
+# Configure schema loading order
+[db.migrations]
+schema_paths = [
+  "./schemas/extensions.sql",  # Load extensions first
+  "./schemas/sessions.sql",    # Base tables
+  "./schemas/characters.sql",  # Tables that depend on sessions
+  "./schemas/assets.sql",      # Independent tables
+  "./schemas/policies.sql"     # RLS policies last
+]
