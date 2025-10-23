@@ -29,6 +29,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/Gm/SessionsView.vue')
       },
       {
+        path: 'characters',
+        name: 'gm-characters',
+        component: () => import('../views/Gm/CharactersView.vue')
+      },
+      {
         path: 'combat',
         name: 'gm-combat',
         component: () => import('../components/CombatView.vue')
