@@ -6,6 +6,7 @@
         <nav>
           <router-link :to="{ name: 'gm-lobby' }">Lobby</router-link>
           <router-link :to="{ name: 'gm-sessions' }">Sessions</router-link>
+          <router-link :to="{ name: 'gm-characters' }">Characters</router-link>
           <router-link :to="{ name: 'gm-combat' }">Combat</router-link>
         </nav>
       </div>
