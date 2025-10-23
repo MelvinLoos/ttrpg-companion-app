@@ -1,11 +1,25 @@
 <template>
   <div class="gm-layout">
     <header>
-      <h1>GM Control Panel</h1>
-      <nav>
-        <router-link :to="{ name: 'gm-lobby' }">Lobby</router-link>
-        <router-link :to="{ name: 'gm-combat' }">Combat</router-link>
-      </nav>
+      <div class="header-left">
+        <h1>GM Control Panel</h1>
+        <nav>
+          <router-link :to="{ name: 'gm-lobby' }">Lobby</router-link>
+          <router-link :to="{ name: 'gm-sessions' }">Sessions</router-link>
+          <router-link :to="{ name: 'gm-combat' }">Combat</router-link>
+        </nav>
+      </div>
+      <div class="user-menu" v-if="authStore.user">
+        <div class="user-info" @click="showMenu = !showMenu">
+          <span class="user-email">{{ authStore.user.email }}</span>
+          <span class="menu-arrow">▼</span>
+        </div>
+        <div v-if="showMenu" class="menu-dropdown" v-click-outside="closeMenu">
+          <button @click="handleSignOut" :disabled="loading">
+            {{ loading ? 'Signing out...' : 'Sign Out' }}
+          </button>
+        </div>
+      </div>
     </header>
     <PartyBar />
     <main>
@@ -15,7 +29,50 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../../stores/auth'
 import PartyBar from '../../components/PartyBar.vue'
+
+const router = useRouter()
+const authStore = useAuthStore()
+const showMenu = ref(false)
+const loading = ref(false)
+
+const closeMenu = () => {
+  showMenu.value = false
+}
+
+async function handleSignOut() {
+  loading.value = true
+  const success = await authStore.signOut()
+  loading.value = false
+  
+  if (success) {
+    router.push('/sign-in')
+  }
+}
+
+// Click outside directive
+interface CustomHTMLElement extends HTMLElement {
+  _clickOutside?: (event: Event) => void
+}
+
+const vClickOutside = {
+  mounted(el: CustomHTMLElement, binding: { value: () => void }) {
+    el._clickOutside = (event: Event) => {
+      if (!(el === event.target || el.contains(event.target as Node))) {
+        binding.value()
+      }
+    }
+    document.addEventListener('click', el._clickOutside)
+  },
+  unmounted(el: CustomHTMLElement) {
+    if (el._clickOutside) {
+      document.removeEventListener('click', el._clickOutside)
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -31,6 +88,12 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
 }
 
 nav {
@@ -51,6 +114,67 @@ nav a:hover {
 
 nav a.router-link-active {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.user-email {
+  font-size: 0.9rem;
+}
+
+.menu-arrow {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #1a1a1a;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 150px;
+}
+
+.menu-dropdown button {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 0.25rem;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.menu-dropdown button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-dropdown button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 main {
