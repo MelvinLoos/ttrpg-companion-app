@@ -1,1 +1,1 @@
--- create extension "uuid-ossp" with schema extensions;
+create extension "uuid-ossp" with schema extensions;
