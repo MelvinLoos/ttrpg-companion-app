@@ -37,13 +37,24 @@ const routes: RouteRecordRaw[] = [
         path: 'combat',
         name: 'gm-combat',
         component: () => import('../components/CombatView.vue')
+      },
+      {
+        path: 'assets',
+        name: 'gm-assets',
+        component: () => import('../views/Gm/AssetsView.vue')
       }
     ]
   },
   {
     path: '/screen/:session_id',
     component: ScreenLayout,
-    children: []
+    children: [
+      {
+        path: '',
+        name: 'player-screen',
+        component: () => import('../views/Screen/PlayerScreenLobby.vue')
+      }
+    ]
   },
   {
     path: '/join/:session_id',

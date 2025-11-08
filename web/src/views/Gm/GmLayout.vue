@@ -8,6 +8,7 @@
           <router-link :to="{ name: 'gm-sessions' }">Sessions</router-link>
           <router-link :to="{ name: 'gm-characters' }">Characters</router-link>
           <router-link :to="{ name: 'gm-combat' }">Combat</router-link>
+          <router-link :to="{ name: 'gm-assets' }">Assets</router-link>
         </nav>
       </div>
       <div class="user-menu" v-if="authStore.user">
@@ -22,7 +23,6 @@
         </div>
       </div>
     </header>
-    <PartyBar />
     <main>
       <router-view />
     </main>
@@ -33,7 +33,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
-import PartyBar from '../../components/PartyBar.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -79,34 +78,45 @@ const vClickOutside = {
 <style scoped>
 .gm-layout {
   min-height: 100vh;
-  padding: 2rem;
+  height: calc(100vh - 2rem);
+  padding: 0.5rem;
   display: grid;
-  grid-template-rows: auto auto 1fr;
-  gap: 2rem;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
 }
 
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
+}
+
+.header-left h1 {
+  margin: 0;
+  font-size: 1.5rem;
 }
 
 nav {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 nav a {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 0.25rem;
   text-decoration: none;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
 }
 
 nav a:hover {
@@ -125,11 +135,12 @@ nav a.router-link-active {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 0.25rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .user-info:hover {
@@ -180,5 +191,7 @@ nav a.router-link-active {
 
 main {
   min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 </style>

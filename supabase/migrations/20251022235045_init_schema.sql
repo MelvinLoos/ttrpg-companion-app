@@ -1,6 +1,7 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
+DROP EXTENSION "uuid-ossp";
+CREATE EXTENSION "uuid-ossp" SCHEMA public;
 
-create table "public"."premade_characters" (
+create table IF NOT EXISTS "public"."premade_characters" (
     "id" uuid not null default uuid_generate_v4(),
     "gm_id" uuid,
     "name" text not null,
@@ -13,7 +14,7 @@ create table "public"."premade_characters" (
 
 alter table "public"."premade_characters" enable row level security;
 
-create table "public"."session_assets" (
+create table IF NOT EXISTS "public"."session_assets" (
     "id" uuid not null default uuid_generate_v4(),
     "gm_id" uuid,
     "asset_type" text not null,
@@ -27,7 +28,7 @@ create table "public"."session_assets" (
 
 alter table "public"."session_assets" enable row level security;
 
-create table "public"."session_characters" (
+create table IF NOT EXISTS "public"."session_characters" (
     "id" uuid not null default uuid_generate_v4(),
     "session_id" uuid,
     "name" text not null,
@@ -44,7 +45,7 @@ create table "public"."session_characters" (
 
 alter table "public"."session_characters" enable row level security;
 
-create table "public"."sessions" (
+create table IF NOT EXISTS "public"."sessions" (
     "id" uuid not null default uuid_generate_v4(),
     "gm_id" uuid,
     "name" text not null,
@@ -59,19 +60,19 @@ create table "public"."sessions" (
 
 alter table "public"."sessions" enable row level security;
 
-CREATE INDEX idx_premade_gm_id ON public.premade_characters USING btree (gm_id);
+CREATE INDEX IF NOT EXISTS idx_premade_gm_id ON public.premade_characters USING btree (gm_id);
 
-CREATE INDEX idx_session_characters_session_id ON public.session_characters USING btree (session_id);
+CREATE INDEX IF NOT EXISTS idx_session_characters_session_id ON public.session_characters USING btree (session_id);
 
-CREATE INDEX idx_sessions_gm_id ON public.sessions USING btree (gm_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_gm_id ON public.sessions USING btree (gm_id);
 
-CREATE UNIQUE INDEX premade_characters_pkey ON public.premade_characters USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS premade_characters_pkey ON public.premade_characters USING btree (id);
 
-CREATE UNIQUE INDEX session_assets_pkey ON public.session_assets USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS session_assets_pkey ON public.session_assets USING btree (id);
 
-CREATE UNIQUE INDEX session_characters_pkey ON public.session_characters USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS session_characters_pkey ON public.session_characters USING btree (id);
 
-CREATE UNIQUE INDEX sessions_pkey ON public.sessions USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS sessions_pkey ON public.sessions USING btree (id);
 
 alter table "public"."premade_characters" add constraint "premade_characters_pkey" PRIMARY KEY using index "premade_characters_pkey";
 
