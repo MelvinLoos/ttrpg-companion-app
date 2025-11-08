@@ -44,10 +44,5 @@ with check ((gm_id = auth.uid()));
 
 
 
-drop policy "Authenticated users can upload portraits" on "storage"."objects";
-
-drop policy "Portraits are publicly accessible" on "storage"."objects";
-
-drop policy "Users can delete their own portraits" on "storage"."objects";
-
+-- We keep the storage policies from the previous migration
 
