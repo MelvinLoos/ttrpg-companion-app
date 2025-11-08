@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { GameSession, SessionCharacter, SessionState } from '../types/session'
+import type { GameSession, SessionState } from '../types/session'
 import { supabase } from '../plugins/supabase'
 
 export const useSessionStore = defineStore('session', () => {
@@ -47,7 +47,7 @@ export const useSessionStore = defineStore('session', () => {
     }
   }
 
-  async function createSession(name: string, teaserText?: string) {
+  async function createSession(name: string, teaserText?: string, activeImageUrl?: string | null) {
     state.value.loading = true
     state.value.error = null
     
@@ -61,6 +61,7 @@ export const useSessionStore = defineStore('session', () => {
         .insert([{ 
           name, 
           teaser_text: teaserText,
+          active_image_url: activeImageUrl,
           showing: 'lobby',
           gm_id: session.user.id
         }])
