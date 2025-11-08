@@ -48,7 +48,13 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/screen/:session_id',
     component: ScreenLayout,
-    children: []
+    children: [
+      {
+        path: '',
+        name: 'player-screen',
+        component: () => import('../views/Screen/PlayerScreenLobby.vue')
+      }
+    ]
   },
   {
     path: '/join/:session_id',
