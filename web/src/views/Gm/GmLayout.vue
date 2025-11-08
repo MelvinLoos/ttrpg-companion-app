@@ -8,6 +8,7 @@
           <router-link :to="{ name: 'gm-sessions' }">Sessions</router-link>
           <router-link :to="{ name: 'gm-characters' }">Characters</router-link>
           <router-link :to="{ name: 'gm-combat' }">Combat</router-link>
+          <router-link :to="{ name: 'gm-assets' }">Assets</router-link>
         </nav>
       </div>
       <div class="user-menu" v-if="authStore.user">
