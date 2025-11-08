@@ -31,9 +31,20 @@ CREATE POLICY "session_characters_owner_write" ON public.session_characters
   FOR INSERT WITH CHECK (true);
 
 -- Asset policies
+-- Session assets table policies
 CREATE POLICY "assets_public_read" ON public.session_assets
   FOR SELECT USING (true);
 
-CREATE POLICY "assets_owner_write" ON public.session_assets
-  FOR ALL USING (gm_id = auth.uid())
+CREATE POLICY "assets_owner_insert" ON public.session_assets
+  FOR INSERT TO authenticated
   WITH CHECK (gm_id = auth.uid());
+
+CREATE POLICY "assets_owner_update" ON public.session_assets
+  FOR UPDATE TO authenticated
+  USING (gm_id = auth.uid())
+  WITH CHECK (gm_id = auth.uid());
+
+CREATE POLICY "assets_owner_delete" ON public.session_assets
+  FOR DELETE TO authenticated
+  USING (gm_id = auth.uid());
+

@@ -237,7 +237,10 @@ onMounted(() => {
 
 <style scoped>
 .characters-view {
-  padding: 1rem;
+  padding: 0.25rem;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .characters-header {

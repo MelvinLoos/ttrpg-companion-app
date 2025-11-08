@@ -5,5 +5,6 @@ schema_paths = [
   "./schemas/sessions.sql",    # Base tables
   "./schemas/characters.sql",  # Tables that depend on sessions
   "./schemas/assets.sql",      # Independent tables
-  "./schemas/policies.sql"     # RLS policies last
+  "./schemas/policies.sql",    # RLS policies last
+  "./schemas/storage.sql"      # Storage tables
 ]
