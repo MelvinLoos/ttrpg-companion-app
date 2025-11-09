@@ -11,7 +11,7 @@
             @change="handleSessionChange"
           >
             <option value="">Select a session...</option>
-            <option value="none">No Session (Disable Player Join)</option>
+            <option value="none">No Session</option>
             <option 
               v-for="session in sessionStore.activeSessions" 
               :key="session.id" 
