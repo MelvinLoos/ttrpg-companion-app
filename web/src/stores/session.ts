@@ -177,14 +177,16 @@ export const useSessionStore = defineStore('session', () => {
 
       if (error) throw error
 
-      // Update local state
+      // Update local state only if deletion was successful
       if (state.value.characters[sessionId]) {
         state.value.characters[sessionId] = state.value.characters[sessionId].filter(
           char => char.id !== characterId
         )
       }
     } catch (error) {
+      console.error('Error removing character:', error)
       state.value.error = error instanceof Error ? error.message : 'Failed to remove character'
+      throw error // Re-throw so the UI can handle it
     } finally {
       state.value.loading = false
     }
