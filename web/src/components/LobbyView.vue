@@ -167,10 +167,10 @@ async function kickPlayer(playerId: string) {
   
   try {
     await sessionStore.removeSessionCharacter(currentSession.value.id, playerId)
-    console.log(`Player "${player.name}" removed from session`)
+    console.log(`Player "${player.name}" removed from session successfully`)
   } catch (error) {
     console.error('Failed to kick player:', error)
-    alert('Failed to remove player. Please try again.')
+    alert(`Failed to remove player "${player.name}". Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
