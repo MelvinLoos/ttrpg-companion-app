@@ -1,5 +1,3 @@
-import type { Session } from '@supabase/supabase-js'
-
 export interface GameSession {
   id: string
   gm_id: string
