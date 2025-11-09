@@ -164,6 +164,32 @@ export const useSessionStore = defineStore('session', () => {
     }
   }
 
+  async function removeSessionCharacter(sessionId: string, characterId: string) {
+    try {
+      state.value.loading = true
+      state.value.error = null
+
+      const { error } = await supabase
+        .from('session_characters')
+        .delete()
+        .eq('id', characterId)
+        .eq('session_id', sessionId)
+
+      if (error) throw error
+
+      // Update local state
+      if (state.value.characters[sessionId]) {
+        state.value.characters[sessionId] = state.value.characters[sessionId].filter(
+          char => char.id !== characterId
+        )
+      }
+    } catch (error) {
+      state.value.error = error instanceof Error ? error.message : 'Failed to remove character'
+    } finally {
+      state.value.loading = false
+    }
+  }
+
   // Initialize real-time subscriptions
   function subscribeToChanges() {
     const sessionsSubscription = supabase
@@ -223,6 +249,7 @@ export const useSessionStore = defineStore('session', () => {
     deleteSession,
     setCurrentSession,
     fetchSessionCharacters,
+    removeSessionCharacter,
     subscribeToChanges
   }
 })

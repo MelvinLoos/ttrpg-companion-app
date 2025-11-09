@@ -60,7 +60,15 @@
             <div v-for="player in currentPlayers" :key="player.id" class="player-card">
               <img v-if="player.portrait_url" :src="player.portrait_url" :alt="player.name" />
               <div v-else class="no-portrait">{{ player.name[0] }}</div>
-              <span>{{ player.name }}</span>
+              <span class="player-name">{{ player.name }}</span>
+              <button 
+                @click="kickPlayer(player.id)" 
+                class="kick-btn"
+                title="Remove player from session"
+                :disabled="sessionStore.state.loading"
+              >
+                ✕
+              </button>
             </div>
           </div>
           <p v-else class="no-players">No players have joined yet</p>
@@ -144,6 +152,25 @@ function openPlayerScreen() {
   if (currentSession.value) {
     const playerScreenUrl = `${window.location.origin}/screen/${currentSession.value.id}`
     window.open(playerScreenUrl, '_blank', 'toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=1200,height=800')
+  }
+}
+
+async function kickPlayer(playerId: string) {
+  if (!currentSession.value) return
+  
+  const player = currentPlayers.value.find(p => p.id === playerId)
+  if (!player) return
+
+  // Show confirmation dialog
+  const confirmKick = confirm(`Are you sure you want to remove "${player.name}" from the session?`)
+  if (!confirmKick) return
+  
+  try {
+    await sessionStore.removeSessionCharacter(currentSession.value.id, playerId)
+    console.log(`Player "${player.name}" removed from session`)
+  } catch (error) {
+    console.error('Failed to kick player:', error)
+    alert('Failed to remove player. Please try again.')
   }
 }
 
@@ -394,6 +421,11 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.player-card:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .player-card img {
@@ -401,6 +433,40 @@ onMounted(async () => {
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.player-name {
+  flex: 1;
+}
+
+.kick-btn {
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  color: rgba(220, 38, 38, 0.9);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.kick-btn:hover {
+  background: rgba(220, 38, 38, 0.3);
+  border-color: rgba(220, 38, 38, 0.6);
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.kick-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .no-portrait {
