@@ -93,7 +93,7 @@
                 <label :for="'stat-' + stat">{{ stat }}</label>
                 <input
                   :id="'stat-' + stat"
-                  v-model.number="stats[stat]"
+                  v-model.number="stats[stat as keyof typeof stats]"
                   type="number"
                   min="0"
                   placeholder="10"
@@ -181,8 +181,10 @@ function handlePortraitChange(event: Event) {
   const input = event.target as HTMLInputElement
   if (input.files?.length) {
     const file = input.files[0]
-    selectedPortrait.value = file
-    portraitPreview.value = URL.createObjectURL(file)
+    if (file) {
+      selectedPortrait.value = file
+      portraitPreview.value = URL.createObjectURL(file)
+    }
   }
 }
 
