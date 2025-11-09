@@ -11,6 +11,7 @@
             @change="handleSessionChange"
           >
             <option value="">Select a session...</option>
+            <option value="none">No Session (Disable Player Join)</option>
             <option 
               v-for="session in sessionStore.activeSessions" 
               :key="session.id" 
@@ -34,7 +35,12 @@
       </p>
     </header>
 
-    <div v-if="currentSession" class="lobby-content">
+    <div v-if="selectedSessionId === 'none'" class="no-session-selected">
+      <h3>Player Join Disabled</h3>
+      <p>No active session - players cannot join at this time.</p>
+    </div>
+
+    <div v-else-if="currentSession" class="lobby-content">
       <div class="session-display">
         <div class="session-background" v-if="currentSession.active_image_url">
           <img :src="currentSession.active_image_url" :alt="currentSession.name" />
@@ -106,7 +112,7 @@ const joinUrl = computed(() => {
 
 // Methods
 async function handleSessionChange() {
-  if (selectedSessionId.value) {
+  if (selectedSessionId.value && selectedSessionId.value !== 'none') {
     await sessionStore.setCurrentSession(selectedSessionId.value)
   } else {
     await sessionStore.setCurrentSession(null)
@@ -196,11 +202,16 @@ onMounted(() => {
 .session-selector select {
   padding: 0.5rem;
   border-radius: 0.25rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  color: inherit;
+  color: white;
   font-size: 0.9rem;
   min-width: 200px;
+}
+
+.session-selector select option {
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
 }
 
 .player-screen-btn {
