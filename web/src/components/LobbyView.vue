@@ -74,8 +74,8 @@
               <code>{{ joinUrl }}</code>
               <button @click="copyJoinUrl" class="copy-btn">Copy</button>
             </div>
-            <div class="qr-placeholder">
-              <p>QR Code will go here</p>
+            <div class="qr-container">
+              <div id="lobby-qr-code" class="qr-code"></div>
             </div>
           </div>
         </div>
@@ -90,8 +90,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useSessionStore } from '../stores/session'
+import QRCode from 'qrcode'
 
 const sessionStore = useSessionStore()
 const selectedSessionId = ref<string>('')
@@ -109,6 +110,14 @@ const joinUrl = computed(() => {
   if (!currentSession.value) return ''
   return `${window.location.origin}/join/${currentSession.value.id}`
 })
+
+// Watch joinUrl to regenerate QR code
+watch(joinUrl, async (newUrl) => {
+  if (newUrl) {
+    await nextTick()
+    generateQRCode()
+  }
+}, { immediate: false })
 
 // Methods
 async function handleSessionChange() {
@@ -138,8 +147,36 @@ function openPlayerScreen() {
   }
 }
 
+async function generateQRCode() {
+  const qrElement = document.getElementById('lobby-qr-code')
+  if (qrElement && joinUrl.value) {
+    try {
+      const canvas = document.createElement('canvas')
+      await QRCode.toCanvas(canvas, joinUrl.value, {
+        width: 120,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      })
+      qrElement.innerHTML = ''
+      qrElement.appendChild(canvas)
+    } catch (err) {
+      console.error('Failed to generate QR code:', err)
+      // Fallback to placeholder
+      qrElement.innerHTML = `
+        <div class="qr-placeholder">
+          <div>QR Code</div>
+          <div style="font-size: 0.7rem; margin-top: 0.5rem; opacity: 0.7;">Unable to generate</div>
+        </div>
+      `
+    }
+  }
+}
+
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   sessionStore.fetchSessions()
   // Set the first session as selected if none is current
   if (sessionStore.activeSessions.length > 0 && !sessionStore.state.currentSession) {
@@ -150,6 +187,12 @@ onMounted(() => {
     }
   } else if (sessionStore.state.currentSession) {
     selectedSessionId.value = sessionStore.state.currentSession.id
+  }
+  
+  // Generate initial QR code if we have a session
+  await nextTick()
+  if (joinUrl.value) {
+    generateQRCode()
   }
 })
 </script>
@@ -424,16 +467,37 @@ onMounted(() => {
   background: rgba(59, 130, 246, 0.3);
 }
 
+.qr-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.qr-code {
+  border-radius: 0.25rem;
+  overflow: hidden;
+  background: white;
+  padding: 0.25rem;
+}
+
+.qr-code canvas {
+  display: block;
+  border-radius: 0.125rem;
+}
+
 .qr-placeholder {
   aspect-ratio: 1;
-  max-width: 120px;
+  width: 120px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 0.25rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   border: 2px dashed rgba(255, 255, 255, 0.2);
-  align-self: center;
+  padding: 0.5rem;
+  text-align: center;
 }
 
 .qr-placeholder p {
