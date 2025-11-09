@@ -59,7 +59,7 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
-  async function createCharacter(character: Partial<PremadeCharacter>, portrait?: File) {
+  async function createCharacter(character: Omit<PremadeCharacter, 'id' | 'gm_id' | 'portrait_url' | 'created_at' | 'updated_at'>, portrait?: File) {
     state.value.loading = true
     state.value.error = null
 

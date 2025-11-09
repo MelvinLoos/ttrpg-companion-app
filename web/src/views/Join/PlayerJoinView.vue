@@ -182,6 +182,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCharacterStore } from '../../stores/character'
 import type { GameSession, SessionCharacter } from '../../types/session'
 import type { CharacterStats } from '../../types/character'
+import type { Database } from '../../types/supabase'
 import { supabase } from '../../plugins/supabase'
 
 // Router and stores
@@ -322,7 +323,7 @@ async function handleJoin() {
   try {
     isJoining.value = true
 
-    let characterData: Partial<SessionCharacter>
+    let characterData: Database['public']['Tables']['session_characters']['Insert']
     
     if (characterType.value === 'premade' && selectedPremadeId.value) {
       // Join with premade character
