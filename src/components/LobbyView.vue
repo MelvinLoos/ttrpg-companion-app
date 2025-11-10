@@ -11,6 +11,7 @@
             @change="handleSessionChange"
           >
             <option value="">Select a session...</option>
+            <option value="none">No Session</option>
             <option 
               v-for="session in sessionStore.activeSessions" 
               :key="session.id" 
@@ -34,7 +35,12 @@
       </p>
     </header>
 
-    <div v-if="currentSession" class="lobby-content">
+    <div v-if="selectedSessionId === 'none'" class="no-session-selected">
+      <h3>Player Join Disabled</h3>
+      <p>No active session - players cannot join at this time.</p>
+    </div>
+
+    <div v-else-if="currentSession" class="lobby-content">
       <div class="session-display">
         <div class="session-background" v-if="currentSession.active_image_url">
           <img :src="currentSession.active_image_url" :alt="currentSession.name" />
@@ -52,9 +58,23 @@
           <h3>Players in Session</h3>
           <div v-if="currentPlayers.length > 0" class="player-list">
             <div v-for="player in currentPlayers" :key="player.id" class="player-card">
-              <img v-if="player.portrait_url" :src="player.portrait_url" :alt="player.name" />
+              <img 
+                v-if="player.portrait_url" 
+                :src="player.portrait_url" 
+                :alt="player.name" 
+                @error="handleImageError"
+                @load="handleImageLoad"
+              />
               <div v-else class="no-portrait">{{ player.name[0] }}</div>
-              <span>{{ player.name }}</span>
+              <span class="player-name">{{ player.name }}</span>
+              <button 
+                @click="kickPlayer(player.id)" 
+                class="kick-btn"
+                title="Remove player from session"
+                :disabled="sessionStore.state.loading"
+              >
+                ✕
+              </button>
             </div>
           </div>
           <p v-else class="no-players">No players have joined yet</p>
@@ -68,8 +88,8 @@
               <code>{{ joinUrl }}</code>
               <button @click="copyJoinUrl" class="copy-btn">Copy</button>
             </div>
-            <div class="qr-placeholder">
-              <p>QR Code will go here</p>
+            <div class="qr-container">
+              <div id="lobby-qr-code" class="qr-code"></div>
             </div>
           </div>
         </div>
@@ -84,11 +104,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useSessionStore } from '../stores/session'
+import { supabase } from '../plugins/supabase'
+import type { SessionCharacter } from '../types/session'
+import QRCode from 'qrcode'
 
 const sessionStore = useSessionStore()
 const selectedSessionId = ref<string>('')
+const characterSubscription = ref<(() => void) | null>(null)
+const localCharacters = ref<SessionCharacter[]>([])
 
 // Computed properties
 const currentSession = computed(() => 
@@ -96,7 +121,7 @@ const currentSession = computed(() =>
 )
 
 const currentPlayers = computed(() => 
-  sessionStore.currentCharacters
+  localCharacters.value
 )
 
 const joinUrl = computed(() => {
@@ -104,9 +129,101 @@ const joinUrl = computed(() => {
   return `${window.location.origin}/join/${currentSession.value.id}`
 })
 
+// Watch joinUrl to regenerate QR code
+watch(joinUrl, async (newUrl) => {
+  if (newUrl) {
+    await nextTick()
+    generateQRCode()
+  }
+}, { immediate: false })
+
+// Real-time subscription for character changes
+function subscribeToCharacterChanges() {
+  // Unsubscribe from any existing subscription
+  if (characterSubscription.value) {
+    characterSubscription.value()
+    characterSubscription.value = null
+  }
+  
+  if (!currentSession.value?.id) {
+    return
+  }
+  
+  const subscription = supabase
+    .channel(`lobby-characters-${currentSession.value.id}`)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public', 
+      table: 'session_characters',
+      filter: `session_id=eq.${currentSession.value.id}`
+    }, (payload) => {
+      if (payload.eventType === 'INSERT' && payload.new) {
+        const newCharacter = payload.new as SessionCharacter
+        // Check if character already exists to avoid duplicates
+        if (!localCharacters.value.find(c => c.id === newCharacter.id)) {
+          localCharacters.value = [...localCharacters.value, newCharacter]
+        }
+      } else if (payload.eventType === 'UPDATE' && payload.new) {
+        const updated = payload.new as SessionCharacter
+        localCharacters.value = localCharacters.value.map(c => 
+          c.id === updated.id ? updated : c
+        )
+      } else if (payload.eventType === 'DELETE') {
+        const deletedRecord = (payload.old || payload.new) as SessionCharacter | null
+        if (deletedRecord?.id) {
+          localCharacters.value = localCharacters.value.filter(c => c.id !== deletedRecord.id)
+        }
+      }
+    })
+    .subscribe()
+
+  characterSubscription.value = () => subscription.unsubscribe()
+}
+
+// Load characters for the current session
+async function loadCharacters() {
+  if (!currentSession.value?.id) {
+    localCharacters.value = []
+    return
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('session_characters')
+      .select('*')
+      .eq('session_id', currentSession.value.id)
+      .order('created_at', { ascending: true })
+
+    if (error) throw error
+    localCharacters.value = data || []
+  } catch (error) {
+    console.error('Failed to load characters:', error)
+    localCharacters.value = []
+  }
+}
+
+// Watch for session changes to re-subscribe to character updates
+watch(currentSession, async (newSession, oldSession) => {
+  if (newSession?.id !== oldSession?.id) {
+    await loadCharacters()
+    subscribeToCharacterChanges()
+  }
+}, { immediate: true })
+
+// Image handling
+function handleImageError(event: Event) {
+  const img = event.target as HTMLImageElement
+  console.warn('Failed to load portrait image:', img.src)
+  // You could set a fallback image here if needed
+}
+
+function handleImageLoad() {
+  // Portrait loaded successfully
+}
+
 // Methods
 async function handleSessionChange() {
-  if (selectedSessionId.value) {
+  if (selectedSessionId.value && selectedSessionId.value !== 'none') {
     await sessionStore.setCurrentSession(selectedSessionId.value)
   } else {
     await sessionStore.setCurrentSession(null)
@@ -117,8 +234,7 @@ async function copyJoinUrl() {
   if (joinUrl.value) {
     try {
       await navigator.clipboard.writeText(joinUrl.value)
-      // You could add a toast notification here
-      console.log('Join URL copied to clipboard')
+      // URL copied to clipboard successfully
     } catch (err) {
       console.error('Failed to copy URL:', err)
     }
@@ -132,9 +248,66 @@ function openPlayerScreen() {
   }
 }
 
+async function kickPlayer(playerId: string) {
+  if (!currentSession.value) return
+  
+  const player = currentPlayers.value.find(p => p.id === playerId)
+  if (!player) return
+
+  // Show confirmation dialog
+  const confirmKick = confirm(`Are you sure you want to remove "${player.name}" from the session?`)
+  if (!confirmKick) return
+  
+  try {
+    const { error } = await supabase
+      .from('session_characters')
+      .delete()
+      .eq('id', playerId)
+      .eq('session_id', currentSession.value.id)
+
+    if (error) throw error
+    
+    // Player removed successfully
+  } catch (error) {
+    console.error('Failed to kick player:', error)
+    alert(`Failed to remove player "${player.name}". Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+async function generateQRCode() {
+  const qrElement = document.getElementById('lobby-qr-code')
+  if (qrElement && joinUrl.value) {
+    try {
+      const canvas = document.createElement('canvas')
+      await QRCode.toCanvas(canvas, joinUrl.value, {
+        width: 120,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      })
+      qrElement.innerHTML = ''
+      qrElement.appendChild(canvas)
+    } catch (err) {
+      console.error('Failed to generate QR code:', err)
+      // Fallback to placeholder
+      qrElement.innerHTML = `
+        <div class="qr-placeholder">
+          <div>QR Code</div>
+          <div style="font-size: 0.7rem; margin-top: 0.5rem; opacity: 0.7;">Unable to generate</div>
+        </div>
+      `
+    }
+  }
+}
+
 // Lifecycle
-onMounted(() => {
+let unsubscribeSession: (() => void) | null = null
+
+onMounted(async () => {
   sessionStore.fetchSessions()
+  
   // Set the first session as selected if none is current
   if (sessionStore.activeSessions.length > 0 && !sessionStore.state.currentSession) {
     const firstSession = sessionStore.activeSessions[0]
@@ -144,6 +317,25 @@ onMounted(() => {
     }
   } else if (sessionStore.state.currentSession) {
     selectedSessionId.value = sessionStore.state.currentSession.id
+  }
+  
+  // Generate initial QR code if we have a session
+  await nextTick()
+  if (joinUrl.value) {
+    generateQRCode()
+  }
+
+  // Subscribe to real-time changes
+  unsubscribeSession = sessionStore.subscribeToChanges()
+})
+
+onUnmounted(() => {
+  if (unsubscribeSession) {
+    unsubscribeSession()
+  }
+  // Cleanup character subscription
+  if (characterSubscription.value) {
+    characterSubscription.value()
   }
 })
 </script>
@@ -196,11 +388,16 @@ onMounted(() => {
 .session-selector select {
   padding: 0.5rem;
   border-radius: 0.25rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  color: inherit;
+  color: white;
   font-size: 0.9rem;
   min-width: 200px;
+}
+
+.session-selector select option {
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
 }
 
 .player-screen-btn {
@@ -340,6 +537,11 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.player-card:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .player-card img {
@@ -347,6 +549,40 @@ onMounted(() => {
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.player-name {
+  flex: 1;
+}
+
+.kick-btn {
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  color: rgba(220, 38, 38, 0.9);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.kick-btn:hover {
+  background: rgba(220, 38, 38, 0.3);
+  border-color: rgba(220, 38, 38, 0.6);
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.kick-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .no-portrait {
@@ -413,16 +649,37 @@ onMounted(() => {
   background: rgba(59, 130, 246, 0.3);
 }
 
+.qr-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.qr-code {
+  border-radius: 0.25rem;
+  overflow: hidden;
+  background: white;
+  padding: 0.25rem;
+}
+
+.qr-code canvas {
+  display: block;
+  border-radius: 0.125rem;
+}
+
 .qr-placeholder {
   aspect-ratio: 1;
-  max-width: 120px;
+  width: 120px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 0.25rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   border: 2px dashed rgba(255, 255, 255, 0.2);
-  align-self: center;
+  padding: 0.5rem;
+  text-align: center;
 }
 
 .qr-placeholder p {

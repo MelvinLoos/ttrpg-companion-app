@@ -8,6 +8,7 @@
             v-if="character.portrait_url" 
             :src="character.portrait_url" 
             :alt="`${character.name}'s portrait`"
+            @error="handleImageError"
           />
           <div v-else class="no-portrait">{{ character.name.charAt(0) }}</div>
         </div>
@@ -73,19 +74,33 @@ function subscribeToCharacterChanges() {
       filter: `session_id=eq.${props.sessionId}`
     }, (payload) => {
       if (payload.eventType === 'INSERT' && payload.new) {
-        characters.value = [...characters.value, payload.new as SessionCharacter]
+        const newCharacter = payload.new as SessionCharacter
+        // Check if character already exists to avoid duplicates
+        if (!characters.value.find(c => c.id === newCharacter.id)) {
+          characters.value = [...characters.value, newCharacter]
+        }
       } else if (payload.eventType === 'UPDATE' && payload.new) {
         const updated = payload.new as SessionCharacter
         characters.value = characters.value.map(c => 
           c.id === updated.id ? updated : c
         )
-      } else if (payload.eventType === 'DELETE' && payload.old) {
-        characters.value = characters.value.filter(c => c.id !== payload.old.id)
+      } else if (payload.eventType === 'DELETE') {
+        // Handle both payload.old and payload.new for delete events
+        const deletedRecord = (payload.old || payload.new) as SessionCharacter | null
+        if (deletedRecord?.id) {
+          characters.value = characters.value.filter(c => c.id !== deletedRecord.id)
+        }
       }
     })
     .subscribe()
 
   return () => subscription.unsubscribe()
+}
+
+// Image handling
+function handleImageError(event: Event) {
+  const img = event.target as HTMLImageElement
+  console.warn('Failed to load portrait image in PartyBar:', img.src)
 }
 
 // Lifecycle
