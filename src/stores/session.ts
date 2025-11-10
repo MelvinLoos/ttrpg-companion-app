@@ -164,34 +164,6 @@ export const useSessionStore = defineStore('session', () => {
     }
   }
 
-  async function removeSessionCharacter(sessionId: string, characterId: string) {
-    try {
-      state.value.loading = true
-      state.value.error = null
-
-      const { error } = await supabase
-        .from('session_characters')
-        .delete()
-        .eq('id', characterId)
-        .eq('session_id', sessionId)
-
-      if (error) throw error
-
-      // Update local state only if deletion was successful
-      if (state.value.characters[sessionId]) {
-        state.value.characters[sessionId] = state.value.characters[sessionId].filter(
-          char => char.id !== characterId
-        )
-      }
-    } catch (error) {
-      console.error('Error removing character:', error)
-      state.value.error = error instanceof Error ? error.message : 'Failed to remove character'
-      throw error // Re-throw so the UI can handle it
-    } finally {
-      state.value.loading = false
-    }
-  }
-
   // Initialize real-time subscriptions
   function subscribeToChanges() {
     const sessionsSubscription = supabase
@@ -233,6 +205,9 @@ export const useSessionStore = defineStore('session', () => {
       )
       .subscribe()
 
+    // Note: Removed session_characters subscription to avoid conflicts with PartyBar
+    // The PartyBar component handles its own character subscriptions with proper filtering
+
     return () => {
       sessionsSubscription.unsubscribe()
     }
@@ -251,7 +226,6 @@ export const useSessionStore = defineStore('session', () => {
     deleteSession,
     setCurrentSession,
     fetchSessionCharacters,
-    removeSessionCharacter,
     subscribeToChanges
   }
 })
