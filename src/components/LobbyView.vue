@@ -98,8 +98,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useSessionStore } from '../stores/session'
+import { supabase } from '../plugins/supabase'
 import QRCode from 'qrcode'
 
 const sessionStore = useSessionStore()
@@ -166,7 +167,14 @@ async function kickPlayer(playerId: string) {
   if (!confirmKick) return
   
   try {
-    await sessionStore.removeSessionCharacter(currentSession.value.id, playerId)
+    const { error } = await supabase
+      .from('session_characters')
+      .delete()
+      .eq('id', playerId)
+      .eq('session_id', currentSession.value.id)
+
+    if (error) throw error
+    
     console.log(`Player "${player.name}" removed from session successfully`)
   } catch (error) {
     console.error('Failed to kick player:', error)
@@ -221,6 +229,13 @@ onMounted(async () => {
   if (joinUrl.value) {
     generateQRCode()
   }
+
+  // Subscribe to real-time changes
+  const unsubscribe = sessionStore.subscribeToChanges()
+  
+  onUnmounted(() => {
+    unsubscribe()
+  })
 })
 </script>
 

@@ -72,15 +72,31 @@ function subscribeToCharacterChanges() {
       table: 'session_characters',
       filter: `session_id=eq.${props.sessionId}`
     }, (payload) => {
+      console.log('PartyBar received real-time update:', payload.eventType, payload)
+      
       if (payload.eventType === 'INSERT' && payload.new) {
-        characters.value = [...characters.value, payload.new as SessionCharacter]
+        const newCharacter = payload.new as SessionCharacter
+        // Check if character already exists to avoid duplicates
+        if (!characters.value.find(c => c.id === newCharacter.id)) {
+          characters.value = [...characters.value, newCharacter]
+          console.log('Added character to PartyBar:', newCharacter.name)
+        }
       } else if (payload.eventType === 'UPDATE' && payload.new) {
         const updated = payload.new as SessionCharacter
         characters.value = characters.value.map(c => 
           c.id === updated.id ? updated : c
         )
-      } else if (payload.eventType === 'DELETE' && payload.old) {
-        characters.value = characters.value.filter(c => c.id !== payload.old.id)
+        console.log('Updated character in PartyBar:', updated.name)
+      } else if (payload.eventType === 'DELETE') {
+        // Handle both payload.old and payload.new for delete events
+        const deletedRecord = (payload.old || payload.new) as SessionCharacter | null
+        if (deletedRecord?.id) {
+          console.log('Attempting to remove character from PartyBar:', deletedRecord.id, deletedRecord.name)
+          const beforeCount = characters.value.length
+          characters.value = characters.value.filter(c => c.id !== deletedRecord.id)
+          const afterCount = characters.value.length
+          console.log('Character removal result:', { beforeCount, afterCount, removed: beforeCount !== afterCount })
+        }
       }
     })
     .subscribe()
