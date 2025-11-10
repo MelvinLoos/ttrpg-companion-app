@@ -58,7 +58,13 @@
           <h3>Players in Session</h3>
           <div v-if="currentPlayers.length > 0" class="player-list">
             <div v-for="player in currentPlayers" :key="player.id" class="player-card">
-              <img v-if="player.portrait_url" :src="player.portrait_url" :alt="player.name" />
+              <img 
+                v-if="player.portrait_url" 
+                :src="player.portrait_url" 
+                :alt="player.name" 
+                @error="handleImageError"
+                @load="handleImageLoad"
+              />
               <div v-else class="no-portrait">{{ player.name[0] }}</div>
               <span class="player-name">{{ player.name }}</span>
               <button 
@@ -101,10 +107,13 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useSessionStore } from '../stores/session'
 import { supabase } from '../plugins/supabase'
+import type { SessionCharacter } from '../types/session'
 import QRCode from 'qrcode'
 
 const sessionStore = useSessionStore()
 const selectedSessionId = ref<string>('')
+const characterSubscription = ref<(() => void) | null>(null)
+const localCharacters = ref<SessionCharacter[]>([])
 
 // Computed properties
 const currentSession = computed(() => 
@@ -112,7 +121,7 @@ const currentSession = computed(() =>
 )
 
 const currentPlayers = computed(() => 
-  sessionStore.currentCharacters
+  localCharacters.value
 )
 
 const joinUrl = computed(() => {
@@ -128,6 +137,90 @@ watch(joinUrl, async (newUrl) => {
   }
 }, { immediate: false })
 
+// Real-time subscription for character changes
+function subscribeToCharacterChanges() {
+  // Unsubscribe from any existing subscription
+  if (characterSubscription.value) {
+    characterSubscription.value()
+    characterSubscription.value = null
+  }
+  
+  if (!currentSession.value?.id) {
+    return
+  }
+  
+  const subscription = supabase
+    .channel(`lobby-characters-${currentSession.value.id}`)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public', 
+      table: 'session_characters',
+      filter: `session_id=eq.${currentSession.value.id}`
+    }, (payload) => {
+      if (payload.eventType === 'INSERT' && payload.new) {
+        const newCharacter = payload.new as SessionCharacter
+        // Check if character already exists to avoid duplicates
+        if (!localCharacters.value.find(c => c.id === newCharacter.id)) {
+          localCharacters.value = [...localCharacters.value, newCharacter]
+        }
+      } else if (payload.eventType === 'UPDATE' && payload.new) {
+        const updated = payload.new as SessionCharacter
+        localCharacters.value = localCharacters.value.map(c => 
+          c.id === updated.id ? updated : c
+        )
+      } else if (payload.eventType === 'DELETE') {
+        const deletedRecord = (payload.old || payload.new) as SessionCharacter | null
+        if (deletedRecord?.id) {
+          localCharacters.value = localCharacters.value.filter(c => c.id !== deletedRecord.id)
+        }
+      }
+    })
+    .subscribe()
+
+  characterSubscription.value = () => subscription.unsubscribe()
+}
+
+// Load characters for the current session
+async function loadCharacters() {
+  if (!currentSession.value?.id) {
+    localCharacters.value = []
+    return
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('session_characters')
+      .select('*')
+      .eq('session_id', currentSession.value.id)
+      .order('created_at', { ascending: true })
+
+    if (error) throw error
+    localCharacters.value = data || []
+  } catch (error) {
+    console.error('Failed to load characters:', error)
+    localCharacters.value = []
+  }
+}
+
+// Watch for session changes to re-subscribe to character updates
+watch(currentSession, async (newSession, oldSession) => {
+  if (newSession?.id !== oldSession?.id) {
+    await loadCharacters()
+    subscribeToCharacterChanges()
+  }
+}, { immediate: true })
+
+// Image handling
+function handleImageError(event: Event) {
+  const img = event.target as HTMLImageElement
+  console.warn('Failed to load portrait image:', img.src)
+  // You could set a fallback image here if needed
+}
+
+function handleImageLoad() {
+  // Portrait loaded successfully
+}
+
 // Methods
 async function handleSessionChange() {
   if (selectedSessionId.value && selectedSessionId.value !== 'none') {
@@ -141,8 +234,7 @@ async function copyJoinUrl() {
   if (joinUrl.value) {
     try {
       await navigator.clipboard.writeText(joinUrl.value)
-      // You could add a toast notification here
-      console.log('Join URL copied to clipboard')
+      // URL copied to clipboard successfully
     } catch (err) {
       console.error('Failed to copy URL:', err)
     }
@@ -175,7 +267,7 @@ async function kickPlayer(playerId: string) {
 
     if (error) throw error
     
-    console.log(`Player "${player.name}" removed from session successfully`)
+    // Player removed successfully
   } catch (error) {
     console.error('Failed to kick player:', error)
     alert(`Failed to remove player "${player.name}". Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -211,8 +303,11 @@ async function generateQRCode() {
 }
 
 // Lifecycle
+let unsubscribeSession: (() => void) | null = null
+
 onMounted(async () => {
   sessionStore.fetchSessions()
+  
   // Set the first session as selected if none is current
   if (sessionStore.activeSessions.length > 0 && !sessionStore.state.currentSession) {
     const firstSession = sessionStore.activeSessions[0]
@@ -231,11 +326,17 @@ onMounted(async () => {
   }
 
   // Subscribe to real-time changes
-  const unsubscribe = sessionStore.subscribeToChanges()
-  
-  onUnmounted(() => {
-    unsubscribe()
-  })
+  unsubscribeSession = sessionStore.subscribeToChanges()
+})
+
+onUnmounted(() => {
+  if (unsubscribeSession) {
+    unsubscribeSession()
+  }
+  // Cleanup character subscription
+  if (characterSubscription.value) {
+    characterSubscription.value()
+  }
 })
 </script>
 
