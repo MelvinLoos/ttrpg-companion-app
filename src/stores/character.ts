@@ -36,8 +36,11 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
-  async function uploadPortrait(file: File) {
+  async function uploadPortrait(file: File, characterName?: string) {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
       const fileExt = file.name.split('.').pop()
       const fileName = `${crypto.randomUUID()}.${fileExt}`
       
@@ -53,6 +56,23 @@ export const useCharacterStore = defineStore('character', () => {
         .from('portraits')
         .getPublicUrl(fileName)
 
+      // Also create an entry in session_assets so it appears in the Assets view
+      try {
+        await supabase
+          .from('session_assets')
+          .insert([{
+            gm_id: user.id,
+            asset_type: 'portrait',
+            storage_bucket: 'portraits',
+            storage_path: fileName,
+            public_url: data.publicUrl,
+            friendly_name: characterName ? `${characterName} Portrait` : file.name
+          }])
+      } catch (assetError) {
+        // Don't fail the whole operation if asset tracking fails
+        console.warn('Failed to track portrait in assets:', assetError)
+      }
+
       return data.publicUrl
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to upload portrait')
@@ -66,7 +86,7 @@ export const useCharacterStore = defineStore('character', () => {
     try {
       let portrait_url = null
       if (portrait) {
-        portrait_url = await uploadPortrait(portrait)
+        portrait_url = await uploadPortrait(portrait, character.name)
       }
 
       const { data: { user } } = await supabase.auth.getUser()
@@ -97,7 +117,7 @@ export const useCharacterStore = defineStore('character', () => {
     try {
       let portrait_url = updates.portrait_url
       if (portrait) {
-        portrait_url = await uploadPortrait(portrait)
+        portrait_url = await uploadPortrait(portrait, updates.name || 'Character')
       }
 
       const { data, error } = await supabase
