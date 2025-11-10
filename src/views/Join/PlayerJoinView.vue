@@ -39,7 +39,7 @@
               />
               <span class="radio-label">Create New Character</span>
             </label>
-            <label class="radio-option" v-if="premadeCharacters.length > 0">
+            <label class="radio-option" v-if="characterStore.sortedCharacters.length > 0">
               <input 
                 type="radio" 
                 v-model="characterType" 
@@ -51,9 +51,9 @@
           </div>
 
           <!-- Premade Character Selection -->
-          <div v-if="characterType === 'premade' && premadeCharacters.length > 0" class="premade-selection">
+          <div v-if="characterType === 'premade'" class="premade-selection">
             <h4>Select a Character</h4>
-            <div class="character-grid">
+            <div v-if="premadeCharacters.length > 0" class="character-grid">
               <div 
                 v-for="character in premadeCharacters" 
                 :key="character.id"
@@ -77,6 +77,10 @@
                   </div>
                 </div>
               </div>
+            </div>
+            <div v-else class="no-characters-available">
+              <p>All premade characters are currently being used by other players in this session.</p>
+              <p><strong>Please create a new character instead.</strong></p>
             </div>
           </div>
 
@@ -177,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCharacterStore } from '../../stores/character'
 import type { GameSession, SessionCharacter } from '../../types/session'
@@ -215,13 +219,23 @@ const characterStats = ref<CharacterStats>({
 const currentPlayers = ref<SessionCharacter[]>([])
 
 // Computed properties
-const premadeCharacters = computed(() => characterStore.sortedCharacters)
+const premadeCharacters = computed(() => {
+  // Filter out premade characters that are already in use in this session
+  const usedPremadeCharacterNames = currentPlayers.value
+    .filter(player => player.is_premade)
+    .map(player => player.name)
+  
+  return characterStore.sortedCharacters.filter(
+    character => !usedPremadeCharacterNames.includes(character.name)
+  )
+})
 
 const canJoin = computed(() => {
   if (characterType.value === 'new') {
     return characterName.value.trim().length > 0
   } else {
-    return selectedPremadeId.value !== null
+    // For premade characters, both a selection and available characters are required
+    return selectedPremadeId.value !== null && premadeCharacters.value.length > 0
   }
 })
 
@@ -408,6 +422,17 @@ function subscribeToPlayers() {
 
   return () => subscription.unsubscribe()
 }
+
+// Watch for changes to available premade characters and reset selection if needed
+watch(premadeCharacters, (availableCharacters) => {
+  // If a premade character was selected but is no longer available, reset the selection
+  if (selectedPremadeId.value && characterType.value === 'premade') {
+    const isStillAvailable = availableCharacters.some(char => char.id === selectedPremadeId.value)
+    if (!isStillAvailable) {
+      selectedPremadeId.value = null
+    }
+  }
+})
 
 // Lifecycle
 onMounted(async () => {
@@ -632,6 +657,24 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 0.2rem;
   text-align: center;
+}
+
+.no-characters-available {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 0.5rem;
+  color: rgba(255, 193, 7, 0.9);
+}
+
+.no-characters-available p {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.no-characters-available p:last-child {
+  margin: 0;
 }
 
 .form-group {
