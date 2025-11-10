@@ -73,7 +73,9 @@ export const useAssetStore = defineStore('asset', () => {
       if (!user) throw new Error('Not authenticated')
 
       // Determine storage bucket based on asset type
-      const bucket = `${assetType}s`
+      const bucket = assetType === 'portrait' ? 'portraits' : 
+                     assetType === 'scene' ? 'scenes' : 
+                     assetType === 'map' ? 'maps' : 'portraits' // default fallback
       const fileExt = file.name.split('.').pop()
       const fileName = `${crypto.randomUUID()}.${fileExt}`
 

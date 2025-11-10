@@ -205,6 +205,9 @@ export const useSessionStore = defineStore('session', () => {
       )
       .subscribe()
 
+    // Note: Removed session_characters subscription to avoid conflicts with PartyBar
+    // The PartyBar component handles its own character subscriptions with proper filtering
+
     return () => {
       sessionsSubscription.unsubscribe()
     }

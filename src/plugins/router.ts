@@ -59,7 +59,18 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/join/:session_id',
     component: JoinLayout,
-    children: []
+    children: [
+      {
+        path: '',
+        name: 'player-join',
+        component: () => import('../views/Join/PlayerJoinView.vue')
+      },
+      {
+        path: 'success',
+        name: 'join-success',
+        component: () => import('../views/Join/JoinSuccessView.vue')
+      }
+    ]
   },
   {
     path: '/',
