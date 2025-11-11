@@ -50,6 +50,7 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../../plugins/supabase'
 
@@ -63,26 +64,50 @@ const characterName = route.query.characterName as string || 'Unknown Character'
 const characterType = route.query.characterType as string || 'new'
 const characterPortrait = route.query.characterPortrait as string || null
 
+// Debug logging on component mount
+onMounted(() => {
+  console.log('JoinSuccessView mounted with route data:')
+  console.log('- Route params:', route.params)
+  console.log('- Route query:', route.query)
+  console.log('- Session ID:', sessionId)
+  console.log('- Character ID:', characterId)
+  console.log('- Character Name:', characterName)
+})
+
 function handleImageError(event: Event) {
   const img = event.target as HTMLImageElement
   console.warn('Failed to load character portrait:', img.src)
 }
 
 async function leaveSession() {
+  console.log('Leave Session clicked!')
+  console.log('Character ID:', characterId)
+  console.log('Session ID:', sessionId)
+  console.log('Character Name:', characterName)
+  
   const confirmLeave = confirm(`Are you sure you want to leave this session? Your character "${characterName}" will be removed from the session.`)
-  if (!confirmLeave) return
+  if (!confirmLeave) {
+    console.log('User cancelled leave session')
+    return
+  }
   
   if (!characterId) {
+    console.error('No character ID found!')
     alert('Error: No character ID found. Cannot remove character from session.')
     return
   }
   
   try {
+    console.log('Attempting to delete character with ID:', characterId)
+    
     // Remove the character from the session using the character ID
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from('session_characters')
       .delete()
       .eq('id', characterId)
+      .select()
+    
+    console.log('Delete result:', { error, data })
     
     if (error) {
       console.error('Failed to remove character:', error)
@@ -90,6 +115,7 @@ async function leaveSession() {
       return
     }
     
+    console.log('Character deleted successfully, navigating back...')
     // Navigate back to the join page
     router.push(`/join/${sessionId}`)
   } catch (error) {
