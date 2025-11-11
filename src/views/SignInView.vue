@@ -37,17 +37,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref<string | null>(null)
+
+// Redirect if already authenticated
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    const redirect = route.query.redirect as string || '/gm'
+    router.push(redirect)
+  }
+})
 
 async function handleSubmit() {
   loading.value = true
@@ -56,7 +65,9 @@ async function handleSubmit() {
   try {
     const success = await authStore.signIn(email.value, password.value)
     if (success) {
-      router.push('/gm')
+      // Redirect to the intended page or default to /gm
+      const redirect = route.query.redirect as string || '/gm'
+      router.push(redirect)
     }
   } catch (e) {
     error.value = 'Failed to sign in. Please check your credentials.'
