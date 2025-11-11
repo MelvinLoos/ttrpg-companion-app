@@ -1,0 +1,22 @@
+{
+  "name": "TTRPG Companion",
+  "short_name": "TTRPG",
+  "description": "A digital companion app for tabletop RPG sessions",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png", 
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "theme_color": "#242424",
+  "background_color": "#242424",
+  "display": "standalone",
+  "orientation": "any"
+}
