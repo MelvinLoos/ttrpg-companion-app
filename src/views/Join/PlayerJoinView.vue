@@ -53,12 +53,14 @@
           <!-- Premade Character Selection -->
           <div v-if="characterType === 'premade'" class="premade-selection">
             <h4>Select a Character</h4>
+            <p class="selection-hint">Click to select, double-click to join immediately</p>
             <div v-if="premadeCharacters.length > 0" class="character-grid">
               <div 
                 v-for="character in premadeCharacters" 
                 :key="character.id"
                 :class="['character-card', { selected: selectedPremadeId === character.id }]"
                 @click="selectedPremadeId = character.id"
+                @dblclick="joinWithPremadeCharacter(character.id)"
               >
                 <div class="character-portrait">
                   <img 
@@ -148,14 +150,6 @@
             class="join-btn"
           >
             {{ isJoining ? 'Joining...' : 'Join Session' }}
-          </button>
-          <button 
-            type="button" 
-            @click="$router.push('/gm')"
-            :disabled="isJoining"
-            class="cancel-btn"
-          >
-            Cancel
           </button>
         </div>
       </form>
@@ -328,6 +322,61 @@ async function uploadPortrait() {
   } catch (error) {
     console.error('Failed to upload portrait:', error)
     return null
+  }
+}
+
+async function joinWithPremadeCharacter(premadeCharId: string) {
+  if (!session.value || isJoining.value) return
+
+  try {
+    isJoining.value = true
+    selectedPremadeId.value = premadeCharId
+    characterType.value = 'premade'
+
+    const premadeChar = premadeCharacters.value.find(c => c.id === premadeCharId)
+    if (!premadeChar) throw new Error('Selected character not found')
+
+    const characterData = {
+      session_id: session.value.id,
+      name: premadeChar.name,
+      portrait_url: premadeChar.portrait_url,
+      is_premade: true,
+      character_type: 'player' as const,
+      initiative_modifier: 0,
+      hand_raised: false
+    }
+
+    // Insert character into session
+    const { data: insertedCharacter, error } = await supabase
+      .from('session_characters')
+      .insert([characterData])
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error('A character with this name already exists in this session')
+      }
+      throw error
+    }
+
+    // Navigate to success page
+    router.push({
+      name: 'join-success',
+      params: { session_id: session.value.id },
+      query: { 
+        sessionName: session.value.name,
+        characterId: insertedCharacter.id,
+        characterName: premadeChar.name,
+        characterType: 'premade',
+        characterPortrait: premadeChar.portrait_url || ''
+      }
+    })
+
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to join session with premade character'
+  } finally {
+    isJoining.value = false
   }
 }
 
@@ -614,6 +663,14 @@ onMounted(async () => {
   color: rgba(255, 255, 255, 0.8);
 }
 
+.selection-hint {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: -0.5rem 0 1rem;
+  text-align: center;
+  font-style: italic;
+}
+
 .character-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -628,11 +685,14 @@ onMounted(async () => {
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
+  user-select: none;
 }
 
 .character-card:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .character-card.selected {
@@ -816,7 +876,7 @@ onMounted(async () => {
 .form-actions {
   display: flex;
   gap: 1rem;
-  justify-content: flex-end;
+  justify-content: center;
   margin-top: 2rem;
 }
 
