@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
 // You'll need to get these from your Supabase project settings
-const supabaseUrl = process.env.VITE_SUPABASE_URL || ''
+const supabaseUrl = process.env.VITE_SUPABASE_DATABASE_URL || ''
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   console.error('Missing environment variables:')
-  console.error('- VITE_SUPABASE_URL (from your project settings)')
+  console.error('- VITE_SUPABASE_DATABASE_URL (from your project settings)')
   console.error('- SUPABASE_SERVICE_ROLE_KEY (from your project API settings)')
   process.exit(1)
 }
