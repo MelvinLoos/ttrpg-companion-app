@@ -369,7 +369,7 @@ async function handleJoin() {
     }
 
     // Insert character into session
-    const { error } = await supabase
+    const { data: insertedCharacter, error } = await supabase
       .from('session_characters')
       .insert([characterData])
       .select()
@@ -382,11 +382,29 @@ async function handleJoin() {
       throw error
     }
 
-    // Navigate to success page
+    // Navigate to success page with character ID for proper deletion
+    const characterInfo = {
+      id: insertedCharacter.id,
+      name: characterType.value === 'premade' && selectedPremadeId.value 
+        ? premadeCharacters.value.find(c => c.id === selectedPremadeId.value)?.name 
+        : characterName.value.trim(),
+      type: characterType.value === 'premade' ? 'premade' : 'new',
+      portraitUrl: characterType.value === 'premade' && selectedPremadeId.value
+        ? premadeCharacters.value.find(c => c.id === selectedPremadeId.value)?.portrait_url
+        : portraitPreview.value,
+      isPremade: characterType.value === 'premade'
+    }
+
     router.push({
       name: 'join-success',
       params: { session_id: session.value.id },
-      query: { sessionName: session.value.name }
+      query: { 
+        sessionName: session.value.name,
+        characterId: characterInfo.id,
+        characterName: characterInfo.name,
+        characterType: characterInfo.type,
+        characterPortrait: characterInfo.portraitUrl || ''
+      }
     })
 
   } catch (err) {
@@ -451,9 +469,9 @@ onMounted(async () => {
 <style scoped>
 .player-join {
   min-height: 100vh;
-  padding: 1rem;
-  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-  color: white;
+  padding: 0.5rem;
+  background-color: #242424;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 .loading-overlay {
@@ -503,10 +521,11 @@ onMounted(async () => {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: inherit;
   border-radius: 0.25rem;
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .back-btn:hover {
@@ -519,36 +538,41 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: 1fr 300px;
   gap: 2rem;
+  padding: 1rem;
 }
 
 .session-header {
   grid-column: 1 / -1;
   text-align: center;
   margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .session-header h1 {
   margin: 0 0 1rem;
   font-size: 2.5rem;
   font-weight: bold;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 .session-description {
   font-size: 1.2rem;
-  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.7);
   margin: 0;
 }
 
 .character-form {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  padding: 2rem;
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
 }
 
 .form-section h3 {
   margin: 0 0 1.5rem;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .character-type-selection {
@@ -562,14 +586,16 @@ onMounted(async () => {
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  padding: 0.75rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
   transition: all 0.2s;
 }
 
 .radio-option:hover {
   background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .radio-option input[type="radio"] {
@@ -584,7 +610,8 @@ onMounted(async () => {
 .premade-selection h4,
 .new-character h4 {
   margin: 0 0 1rem;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .character-grid {
@@ -595,8 +622,8 @@ onMounted(async () => {
 
 .character-card {
   background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
   padding: 1rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -604,13 +631,13 @@ onMounted(async () => {
 }
 
 .character-card:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .character-card.selected {
   border-color: #60a5fa;
-  background: rgba(96, 165, 250, 0.2);
+  background: rgba(96, 165, 250, 0.15);
 }
 
 .character-portrait {
@@ -636,12 +663,13 @@ onMounted(async () => {
 .no-portrait {
   font-size: 2rem;
   font-weight: bold;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .character-info h5 {
   margin: 0 0 0.5rem;
   font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .stats-preview {
@@ -649,12 +677,12 @@ onMounted(async () => {
   grid-template-columns: repeat(3, 1fr);
   gap: 0.25rem;
   font-size: 0.8rem;
-  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .stat {
   padding: 0.2rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 0.2rem;
   text-align: center;
 }
@@ -685,21 +713,29 @@ onMounted(async () => {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .form-group input[type="text"],
 .form-group input[type="number"] {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  font-size: 1rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.87);
+  font-size: 0.9rem;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus {
+  outline: none;
+  border-color: #646cff;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .form-group input[type="text"]::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .portrait-upload {
@@ -743,14 +779,14 @@ onMounted(async () => {
 .no-portrait-preview {
   width: 120px;
   height: 120px;
-  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.05);
   font-size: 0.9rem;
-  opacity: 0.7;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .stats-grid {
@@ -769,6 +805,7 @@ onMounted(async () => {
   font-size: 0.8rem;
   text-align: center;
   margin: 0;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .stat-input input {
@@ -784,35 +821,36 @@ onMounted(async () => {
 }
 
 .join-btn {
-  padding: 0.75rem 2rem;
-  background: linear-gradient(45deg, #10b981, #059669);
-  border: none;
-  border-radius: 0.5rem;
-  color: white;
-  font-size: 1.1rem;
-  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  color: rgba(255, 255, 255, 0.87);
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .join-btn:hover:not(:disabled) {
-  background: linear-gradient(45deg, #059669, #047857);
-  transform: translateY(-2px);
+  border-color: #646cff;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .join-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 .cancel-btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.6rem 1.2rem;
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 0.5rem;
-  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  color: rgba(255, 255, 255, 0.87);
+  font-size: 0.9rem;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
 .cancel-btn:hover:not(:disabled) {
@@ -821,15 +859,17 @@ onMounted(async () => {
 
 .current-players {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
   padding: 1.5rem;
-  backdrop-filter: blur(10px);
   height: fit-content;
 }
 
 .current-players h3 {
   margin: 0 0 1rem;
   text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.2rem;
 }
 
 .player-list {
@@ -844,7 +884,8 @@ onMounted(async () => {
   gap: 0.75rem;
   padding: 0.5rem;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
 }
 
 .player-portrait {
@@ -858,15 +899,17 @@ onMounted(async () => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .player-name {
   font-weight: 500;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 /* Responsive design */
@@ -886,6 +929,10 @@ onMounted(async () => {
 
   .form-actions {
     flex-direction: column;
+  }
+
+  .session-header h1 {
+    font-size: 2rem;
   }
 }
 </style>
