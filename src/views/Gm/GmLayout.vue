@@ -12,11 +12,11 @@
         </nav>
       </div>
       <div class="user-menu" v-if="authStore.user">
-        <div class="user-info" @click="showMenu = !showMenu">
+        <div class="user-info" @click="toggleMenu">
           <span class="user-email">{{ authStore.user.email }}</span>
-          <span class="menu-arrow">▼</span>
+          <span class="menu-arrow" :class="{ 'rotated': showMenu }">▼</span>
         </div>
-        <div v-if="showMenu" class="menu-dropdown" v-click-outside="closeMenu">
+        <div v-if="showMenu" class="menu-dropdown" @click.stop>
           <button @click="handleSignOut" :disabled="loading">
             {{ loading ? 'Signing out...' : 'Sign Out' }}
           </button>
@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 
@@ -39,38 +39,41 @@ const authStore = useAuthStore()
 const showMenu = ref(false)
 const loading = ref(false)
 
+const toggleMenu = () => {
+  console.log('Toggle menu clicked, current state:', showMenu.value)
+  showMenu.value = !showMenu.value
+  console.log('New menu state:', showMenu.value)
+}
+
 const closeMenu = () => {
   showMenu.value = false
 }
 
+// Close menu when clicking outside
+const handleClickOutside = (event: Event) => {
+  const target = event.target as Element
+  if (!target.closest('.user-menu')) {
+    closeMenu()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
 async function handleSignOut() {
   loading.value = true
+  closeMenu() // Close the menu before signing out
+  
   const success = await authStore.signOut()
   loading.value = false
   
   if (success) {
     router.push('/sign-in')
-  }
-}
-
-// Click outside directive
-interface CustomHTMLElement extends HTMLElement {
-  _clickOutside?: (event: Event) => void
-}
-
-const vClickOutside = {
-  mounted(el: CustomHTMLElement, binding: { value: () => void }) {
-    el._clickOutside = (event: Event) => {
-      if (!(el === event.target || el.contains(event.target as Node))) {
-        binding.value()
-      }
-    }
-    document.addEventListener('click', el._clickOutside)
-  },
-  unmounted(el: CustomHTMLElement) {
-    if (el._clickOutside) {
-      document.removeEventListener('click', el._clickOutside)
-    }
   }
 }
 </script>
@@ -154,6 +157,11 @@ nav a.router-link-active {
 .menu-arrow {
   font-size: 0.8rem;
   opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+
+.menu-arrow.rotated {
+  transform: rotate(180deg);
 }
 
 .menu-dropdown {
