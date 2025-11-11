@@ -12,15 +12,24 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function initialize() {
     try {
+      loading.value = true
+      
       // Get initial session
       const { data: { session } } = await supabase.auth.getSession()
       user.value = session?.user ?? null
 
-      // Listen for auth changes
-      supabase.auth.onAuthStateChange((_event, session) => {
+      // Listen for auth changes (this handles automatic session refresh)
+      supabase.auth.onAuthStateChange((event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email)
         user.value = session?.user ?? null
+        
+        // Clear any existing errors when auth state changes
+        if (session?.user) {
+          error.value = null
+        }
       })
     } catch (e) {
+      console.error('Auth initialization failed:', e)
       error.value = e instanceof Error ? e.message : 'Failed to initialize auth'
     } finally {
       loading.value = false

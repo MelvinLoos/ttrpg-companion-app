@@ -91,6 +91,11 @@ export const router = createRouter({
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
+  // Wait for auth initialization to complete if it's still loading
+  while (authStore.loading) {
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { name: 'sign-in', query: { redirect: to.fullPath } }
   }
