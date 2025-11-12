@@ -20,7 +20,7 @@
       </div>
       
       <!-- QR Code for joining -->
-      <div class="character-card qr-card">
+      <div class="character-card qr-card" v-if="!hideQr">
         <div class="qr-code-container">
           <canvas ref="qrCodeCanvas" class="qr-code"></canvas>
         </div>
@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import QRCode from 'qrcode'
 import type { SessionCharacter } from '../types/session'
 import { supabase } from '../plugins/supabase'
@@ -45,6 +45,7 @@ interface Props {
   sessionId: string
   compact?: boolean
   square?: boolean
+  hideQr?: boolean
 }
 
 const props = defineProps<Props>()
@@ -119,7 +120,7 @@ function handleImageError(event: Event) {
 
 // QR Code generation
 async function generateQRCode() {
-  if (!qrCodeCanvas.value) return
+  if (!qrCodeCanvas.value || props.hideQr) return
   
   try {
     const joinUrl = `${window.location.origin}/join/${props.sessionId}`
@@ -148,6 +149,15 @@ onMounted(async () => {
     unsubscribe()
   })
 })
+
+// Watch for hideQr prop changes to regenerate QR code when it becomes visible
+watch(() => props.hideQr, async (newHideQr, oldHideQr) => {
+  if (oldHideQr && !newHideQr) {
+    // QR code became visible, generate it
+    await nextTick()
+    await generateQRCode()
+  }
+}, { immediate: false })
 </script>
 
 <style scoped>

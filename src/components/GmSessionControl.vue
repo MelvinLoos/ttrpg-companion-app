@@ -170,36 +170,36 @@ async function resumeSession() {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
-  padding: 1.5rem;
-  margin: 1rem 0;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
 }
 
 .session-status {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .session-status h3 {
-  margin: 0 0 1rem;
+  margin: 0 0 0.5rem;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .status-indicator {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .status-dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   transition: background-color 0.2s;
 }
 
 .status-text {
   font-weight: 500;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 /* Status-specific styling */
@@ -237,19 +237,19 @@ async function resumeSession() {
 
 .session-actions {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   justify-content: center;
 }
 
 .session-actions button {
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   border: none;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s;
-  min-width: 140px;
+  min-width: 120px;
 }
 
 .start-btn {

@@ -398,10 +398,10 @@ onUnmounted(() => {
 
 <style scoped>
 .lobby-view {
-  padding: 0.25rem;
-  height: 100%;
+  padding: 0.125rem;
+  height: 100vh;
   width: 100%;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -409,16 +409,16 @@ onUnmounted(() => {
 .lobby-header {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
 }
 
 .lobby-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
 }
 
 .header-controls {
@@ -572,10 +572,10 @@ onUnmounted(() => {
 .lobby-content {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .session-display {
@@ -584,7 +584,7 @@ onUnmounted(() => {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.05);
   width: 100%;
-  height: 400px;
+  height: 200px;
   flex-shrink: 0;
 }
 
@@ -609,22 +609,22 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 2rem;
+  padding: 1rem;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
   color: white;
   z-index: 2;
 }
 
 .session-title {
-  margin: 0 0 0.5rem;
-  font-size: 2rem;
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
   font-weight: bold;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .session-teaser {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   opacity: 0.9;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
@@ -632,7 +632,7 @@ onUnmounted(() => {
 .lobby-controls {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.75rem;
   height: auto;
 }
 
@@ -640,32 +640,32 @@ onUnmounted(() => {
 .join-section {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .player-section h3,
 .join-section h3 {
-  margin: 0 0 1rem;
-  font-size: 1.1rem;
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
   color: rgba(255, 255, 255, 0.9);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
 }
 
 .player-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-height: 180px;
+  gap: 0.25rem;
+  max-height: 120px;
   overflow-y: auto;
 }
 
 .player-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem;
+  gap: 0.5rem;
+  padding: 0.25rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -739,7 +739,7 @@ onUnmounted(() => {
 .join-info {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .join-info p {
@@ -785,7 +785,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .qr-code {
@@ -802,7 +802,7 @@ onUnmounted(() => {
 
 .qr-placeholder {
   aspect-ratio: 1;
-  width: 120px;
+  width: 100px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 0.25rem;
   display: flex;
@@ -810,7 +810,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   border: 2px dashed rgba(255, 255, 255, 0.2);
-  padding: 0.5rem;
+  padding: 0.25rem;
   text-align: center;
 }
 
@@ -849,11 +849,15 @@ onUnmounted(() => {
   }
   
   .session-display {
-    height: 250px;
+    height: 150px;
   }
   
   .session-title {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
+  }
+  
+  .session-overlay {
+    padding: 0.75rem;
   }
 }
 

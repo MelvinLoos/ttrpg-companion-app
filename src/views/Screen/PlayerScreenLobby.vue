@@ -33,7 +33,7 @@
 
         <!-- Party members display -->
         <div class="party-section">
-          <PartyBar :session-id="route.params.session_id as string" />
+          <PartyBar :session-id="route.params.session_id as string" :hide-qr="!shouldShowQR" />
         </div>
       </main>
     </div>
@@ -95,6 +95,12 @@ let notificationIdCounter = 1
 const joinUrl = computed(() => {
   const baseUrl = window.location.origin
   return `${baseUrl}/join/${route.params.session_id}`
+})
+
+const shouldShowQR = computed(() => {
+  // Show QR code in party when session has started (IN_PLAY or PAUSED) 
+  // Hide it in LOBBY state since standalone QR join section is visible
+  return session.value?.state === 'IN_PLAY' || session.value?.state === 'PAUSED'
 })
 
 // Notification methods
