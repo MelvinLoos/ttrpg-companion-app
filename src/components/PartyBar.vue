@@ -1,31 +1,38 @@
 <template>
   <div class="party-bar" :class="{ 'compact': compact, 'square': square }">
-    <h3>Adventuring Party</h3>
     <div v-if="characters.length > 0 || true" class="party-grid">
-      <div v-for="character in characters" :key="character.id" class="character-card">
-        <div class="character-portrait">
-          <img 
-            v-if="character.portrait_url" 
-            :src="character.portrait_url" 
-            :alt="`${character.name}'s portrait`"
-            @error="handleImageError"
-          />
-          <div v-else class="no-portrait">{{ character.name.charAt(0) }}</div>
-        </div>
-        <div class="character-info">
-          <h4>{{ character.name }}</h4>
-          <span class="character-type">{{ formatCharacterType(character.character_type) }}</span>
-          <div v-if="character.hand_raised" class="hand-raised">✋ Question</div>
-        </div>
+      <!-- Left side title -->
+      <div class="party-title">
+        <h3>Adventuring Party</h3>
       </div>
-      
-      <!-- QR Code for joining -->
-      <div class="character-card qr-card" v-if="!hideQr">
-        <div class="qr-code-container">
-          <canvas ref="qrCodeCanvas" class="qr-code"></canvas>
+
+      <!-- Right side characters -->
+      <div class="party-characters">
+        <div v-for="character in characters" :key="character.id" class="character-card">
+          <div class="character-portrait">
+            <img 
+              v-if="character.portrait_url" 
+              :src="character.portrait_url" 
+              :alt="`${character.name}'s portrait`"
+              @error="handleImageError"
+            />
+            <div v-else class="no-portrait">{{ character.name.charAt(0) }}</div>
+          </div>
+          <div class="character-info">
+            <h4>{{ character.name }}</h4>
+            <span class="character-type">{{ formatCharacterType(character.character_type) }}</span>
+            <div v-if="character.hand_raised" class="hand-raised">✋ Question</div>
+          </div>
         </div>
-        <div class="character-info">
-          <h4>Join Session</h4>
+
+        <!-- QR Code for joining -->
+        <div class="character-card qr-card" v-if="!hideQr">
+          <div class="qr-code-container">
+            <canvas ref="qrCodeCanvas" class="qr-code"></canvas>
+          </div>
+          <div class="character-info">
+            <h4>Join Session</h4>
+          </div>
         </div>
       </div>
     </div>
@@ -175,8 +182,32 @@ watch(() => props.hideQr, async (newHideQr, oldHideQr) => {
 
 .party-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: auto 1fr;
   gap: 1rem;
+  align-items: center;
+  width: 100%;
+}
+
+.party-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.party-title h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  color: white;
+  white-space: nowrap;
+}
+
+.party-characters {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-start;
+  flex-wrap: wrap;
 }
 
 .character-card {

@@ -1,19 +1,27 @@
 <template>
   <div class="player-screen-in-play">
-    <!-- Background image display -->
-    <div 
-      v-if="session?.active_image_url" 
-      class="background-image"
-      :style="{ backgroundImage: `url(${session.active_image_url})` }"
-    ></div>
-    <div v-else class="default-background"></div>
+    <!-- Background image display with fade transition -->
+    <div class="background-container">
+      <transition name="scene-fade" mode="out-in">
+        <div 
+          v-if="currentImageAsset?.url || session?.active_image_url"
+          :key="(currentImageAsset?.url || session?.active_image_url) || 'no-image'"
+          class="background-image"
+          :style="{ backgroundImage: `url(${currentImageAsset?.url || session?.active_image_url})` }"
+        ></div>
+        <div v-else key="default" class="default-background"></div>
+      </transition>
+    </div>
 
     <!-- Session content overlay -->
     <div class="content-overlay">
       <!-- Session header -->
       <header class="session-header">
-        <h1 v-if="session?.name" class="session-name">{{ session.name }}</h1>
-        <h1 v-else>Loading Session...</h1>
+        <div class="header-content">
+          <h1 v-if="session?.name" class="session-name">{{ session.name }}</h1>
+          <h1 v-else>Loading Session...</h1>
+          <span class="status-badge header-status" :class="statusClass">{{ statusText }}</span>
+        </div>
         <div v-if="session?.teaser_text" class="scene-subtitle">
           {{ session.teaser_text }}
         </div>
@@ -21,28 +29,11 @@
 
       <!-- Main content area -->
       <main class="in-play-main">
-        <!-- Overlay containers for party and session info -->
+        <!-- Simplified overlay containers -->
         <div class="overlay-containers">
-          <!-- Session info - Top Right -->
-          <div class="session-info">
-            <h4>Session Details</h4>
-            <div class="details-grid">
-              <div class="detail-item status-item">
-                <span class="status-badge" :class="statusClass">{{ statusText }}</span>
-              </div>
-              <div class="detail-item" v-if="session?.created_at">
-                <span class="label">Started:</span>
-                <span class="value">{{ formatDate(session.created_at) }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bottom section with party -->
-          <div class="bottom-section">
-            <!-- Party members display -->
-            <div class="party-section">
-              <PartyBar :session-id="route.params.session_id as string" :compact="true" :square="true" />
-            </div>
+          <!-- Party members display at bottom -->
+          <div class="party-section">
+            <PartyBar :session-id="route.params.session_id as string" :compact="true" :square="true" />
           </div>
         </div>
       </main>
@@ -106,6 +97,9 @@ const session = ref<GameSession | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const playerCount = ref(0)
+
+// Current image asset state
+const currentImageAsset = ref<{id: string, url: string, name?: string} | null>(null)
 
 // Notification state
 const notifications = ref<{id: number, message: string, type: 'success' | 'info' | 'warning'}[]>([])
@@ -184,6 +178,12 @@ async function loadSessionData() {
     // Load player count
     await loadPlayerCount(sessionId)
 
+    // Load current image asset if one is set
+    const currentAssetId = (sessionData as any).current_image_asset_id
+    if (currentAssetId) {
+      await loadCurrentImageAsset(currentAssetId)
+    }
+
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load session'
   } finally {
@@ -206,6 +206,50 @@ async function loadPlayerCount(sessionId: string) {
   }
 }
 
+async function loadCurrentImageAsset(assetId: string | null) {
+  if (!assetId) {
+    currentImageAsset.value = null
+    return
+  }
+
+  try {
+    const { data: asset, error: assetError } = await supabase
+      .from('session_assets')
+      .select('id, public_url, friendly_name')
+      .eq('id', assetId)
+      .single()
+
+    if (assetError) {
+      console.error('Failed to load current image asset:', assetError)
+      currentImageAsset.value = null
+      return
+    }
+
+    if (asset && asset.public_url) {
+      // Preload the image for smoother transition
+      const img = new Image()
+      img.onload = () => {
+        currentImageAsset.value = {
+          id: asset.id,
+          url: asset.public_url!,
+          name: asset.friendly_name || undefined
+        }
+        console.log(`Loaded and displayed scene: ${asset.friendly_name || asset.id}`)
+      }
+      img.onerror = () => {
+        console.error('Failed to load image:', asset.public_url)
+        currentImageAsset.value = null
+      }
+      img.src = asset.public_url
+    } else {
+      currentImageAsset.value = null
+    }
+  } catch (err) {
+    console.error('Error loading current image asset:', err)
+    currentImageAsset.value = null
+  }
+}
+
 function subscribeToSessionChanges() {
   const sessionId = route.params.session_id as string
   
@@ -222,6 +266,8 @@ function subscribeToSessionChanges() {
         const newSession = payload.new as GameSession
         const oldState = session.value?.state
         const newState = newSession.state
+        const oldImageAssetId = session.value?.current_image_asset_id
+        const newImageAssetId = newSession.current_image_asset_id
         
         // Check for state transitions and show notifications
         if (oldState === 'LOBBY' && newState === 'IN_PLAY') {
@@ -232,6 +278,12 @@ function subscribeToSessionChanges() {
           addNotification('⏸️ Session paused. Stand by...', 'warning')
         } else if (oldState === 'PAUSED' && newState === 'IN_PLAY') {
           addNotification('▶️ Session resumed! Back to the adventure!', 'success')
+        }
+
+        // Check for image asset changes
+        if (oldImageAssetId !== newImageAssetId) {
+          console.log('Current image asset changed:', { old: oldImageAssetId, new: newImageAssetId })
+          loadCurrentImageAsset(newImageAssetId || null)
         }
         
         session.value = newSession
@@ -251,11 +303,6 @@ function subscribeToSessionChanges() {
   return () => {
     sessionSubscription.unsubscribe()
   }
-}
-
-function formatDate(dateString: string) {
-  const date = new Date(dateString)
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 // Fullscreen functionality
@@ -296,23 +343,59 @@ onMounted(async () => {
 <style scoped>
 .player-screen-in-play {
   min-height: 100vh;
+  height: 100vh;
   position: relative;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Background */
+.background-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
 .background-image {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  z-index: 1;
+}
+
+.background-image::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: inherit;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: brightness(0.7);
+  filter: blur(20px) brightness(0.3);
   z-index: 1;
+}
+
+.background-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: inherit;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 2;
 }
 
 .default-background {
@@ -325,14 +408,37 @@ onMounted(async () => {
   z-index: 1;
 }
 
+/* Scene fade transition */
+.scene-fade-enter-active,
+.scene-fade-leave-active {
+  transition: all 0.4s ease-in-out;
+}
+
+.scene-fade-enter-from {
+  opacity: 0;
+  transform: scale(1.05);
+}
+
+.scene-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.scene-fade-enter-to,
+.scene-fade-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+
 /* Content overlay */
 .content-overlay {
   position: relative;
   z-index: 2;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 /* Session Header */
@@ -343,19 +449,32 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .session-name {
   font-size: 2.5rem;
   font-weight: bold;
   color: white;
-  margin: 0 0 0.5rem;
+  margin: 0;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.header-status {
+  font-size: 0.8rem;
+  padding: 0.375rem 0.75rem;
 }
 
 .scene-subtitle {
   color: rgba(255, 255, 255, 0.9);
   font-size: 1.1rem;
   font-style: italic;
-  margin: 0 0 1rem;
+  margin: 0.5rem 0 1rem;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   line-height: 1.4;
   padding: 0;
@@ -419,41 +538,17 @@ onMounted(async () => {
   bottom: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 1rem 1rem 0;
+  justify-content: flex-end;
+  padding: 1rem;
   pointer-events: none;
-  gap: 1rem;
 }
 
 .overlay-containers > * {
   pointer-events: auto;
 }
 
-.session-info {
-  background: rgba(0, 0, 0, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 1rem;
-  padding: 0.75rem;
-  backdrop-filter: blur(10px);
-  max-width: 200px;
-  align-self: flex-end;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.bottom-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  width: 100%;
-  align-self: flex-end;
-}
-
 .party-section {
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  background: transparent;
   padding: 0.4rem 0.6rem 0.2rem;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   width: 100%;
@@ -544,57 +639,6 @@ onMounted(async () => {
   color: white;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-/* Session Info - Now overlaid */
-.session-info {
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 1rem;
-  padding: 1rem;
-  backdrop-filter: blur(8px);
-  width: 100%;
-}
-
-.session-info h4 {
-  color: white;
-  margin: 0 0 0.75rem;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.details-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.5rem;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.8rem;
-}
-
-.status-item {
-  justify-content: center;
-  margin-bottom: 0.25rem;
-}
-
-.status-item .status-badge {
-  width: 100%;
-  text-align: center;
-  justify-self: center;
-}
-
-.label {
-  color: rgba(255, 255, 255, 0.7);
-  font-weight: 500;
-}
-
-.value {
-  color: white;
-  font-weight: 600;
 }
 
 /* Loading and Error States */
@@ -732,12 +776,7 @@ onMounted(async () => {
   }
 
   .overlay-containers {
-    padding: 0.5rem 0.5rem 0;
-  }
-
-  .session-info {
-    max-width: none;
-    align-self: stretch;
+    padding: 0.5rem;
   }
 
   .fullscreen-btn {
@@ -746,10 +785,6 @@ onMounted(async () => {
     font-size: 0.9rem;
     width: 2.25rem;
     height: 2.25rem;
-  }
-
-  .details-grid {
-    gap: 0.25rem;
   }
 }
 
@@ -765,11 +800,7 @@ onMounted(async () => {
   }
 
   .overlay-containers {
-    padding: 0.25rem 0.25rem 0;
-  }
-
-  .session-info {
-    padding: 0.75rem;
+    padding: 0.25rem;
   }
 }
 </style>

@@ -5,6 +5,7 @@ export interface GameSession {
   showing: 'lobby' | 'combat'
   state: 'LOBBY' | 'IN_PLAY' | 'PAUSED'
   active_image_url: string | null
+  current_image_asset_id?: string | null // Optional for backward compatibility during migration
   teaser_text: string | null
   active_turn_character_id: string | null
   created_at: string
@@ -23,6 +24,18 @@ export interface SessionCharacter {
   hand_raised: boolean
   created_at: string
   updated_at: string
+}
+
+export interface SessionAsset {
+  id: string
+  gm_id: string
+  asset_type: 'portrait' | 'scene' | 'map'
+  type: 'IMAGE' | 'AUDIO'
+  storage_bucket: 'portraits' | 'scenes' | 'maps'
+  storage_path: string
+  public_url: string | null
+  friendly_name: string | null
+  created_at: string
 }
 
 export interface SessionState {

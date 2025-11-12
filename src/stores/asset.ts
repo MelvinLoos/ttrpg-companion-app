@@ -12,6 +12,7 @@ export interface Asset {
   id: string
   gm_id: string
   asset_type: 'portrait' | 'scene' | 'map'
+  type: 'IMAGE' | 'AUDIO'
   storage_bucket: 'portraits' | 'scenes' | 'maps'
   storage_path: string
   public_url: string | null
@@ -52,7 +53,7 @@ export const useAssetStore = defineStore('asset', () => {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      state.value.assets = data
+      state.value.assets = (data || []) as Asset[]
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to fetch assets'
     } finally {
@@ -97,6 +98,7 @@ export const useAssetStore = defineStore('asset', () => {
         .insert([{
           gm_id: user.id,
           asset_type: assetType,
+          type: 'IMAGE', // Default to IMAGE for Feature 3
           storage_bucket: bucket,
           storage_path: fileName,
           public_url: data.publicUrl,
@@ -107,7 +109,7 @@ export const useAssetStore = defineStore('asset', () => {
 
       if (insertError) throw insertError
 
-      state.value.assets = [asset, ...state.value.assets]
+      state.value.assets = [asset as Asset, ...state.value.assets]
       return asset
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to upload asset'

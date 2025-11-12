@@ -44,6 +44,14 @@
         {{ loading ? 'Resuming...' : 'Resume Session' }}
       </button>
     </div>
+
+    <!-- Asset Gallery for pushing images to player screen -->
+    <GmAssetGallery 
+      v-if="currentSession"
+      :session-id="currentSession.id"
+      :current-image-asset-id="currentSession.current_image_asset_id"
+      @image-pushed="handleImagePushed"
+    />
   </div>
 </template>
 
@@ -51,6 +59,7 @@
 import { computed, ref } from 'vue'
 import { supabase } from '../plugins/supabase'
 import type { GameSession } from '../types/session'
+import GmAssetGallery from './GmAssetGallery.vue'
 
 const loading = ref(false)
 
@@ -195,6 +204,12 @@ async function resumeSession() {
   } finally {
     loading.value = false
   }
+}
+
+function handleImagePushed(assetId: string) {
+  console.log(`Image asset ${assetId} pushed to player screen`)
+  // The GmAssetGallery component handles the actual update to the database
+  // This is just for logging/feedback in the GM interface
 }
 </script>
 
