@@ -1,7 +1,7 @@
 <template>
-  <div class="party-bar">
+  <div class="party-bar" :class="{ 'compact': compact, 'square': square }">
     <h3>Adventuring Party</h3>
-    <div v-if="characters.length > 0" class="party-grid">
+    <div v-if="characters.length > 0 || true" class="party-grid">
       <div v-for="character in characters" :key="character.id" class="character-card">
         <div class="character-portrait">
           <img 
@@ -18,6 +18,16 @@
           <div v-if="character.hand_raised" class="hand-raised">✋ Question</div>
         </div>
       </div>
+      
+      <!-- QR Code for joining -->
+      <div class="character-card qr-card">
+        <div class="qr-code-container">
+          <canvas ref="qrCodeCanvas" class="qr-code"></canvas>
+        </div>
+        <div class="character-info">
+          <h4>Join Session</h4>
+        </div>
+      </div>
     </div>
     <div v-else class="empty-party">
       <p>Waiting for adventurers to join...</p>
@@ -26,18 +36,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import QRCode from 'qrcode'
 import type { SessionCharacter } from '../types/session'
 import { supabase } from '../plugins/supabase'
 
 interface Props {
   sessionId: string
+  compact?: boolean
+  square?: boolean
 }
 
 const props = defineProps<Props>()
 
 // Component state
 const characters = ref<SessionCharacter[]>([])
+const qrCodeCanvas = ref<HTMLCanvasElement | null>(null)
 
 // Methods
 function formatCharacterType(type: string): string {
@@ -103,9 +117,31 @@ function handleImageError(event: Event) {
   console.warn('Failed to load portrait image in PartyBar:', img.src)
 }
 
+// QR Code generation
+async function generateQRCode() {
+  if (!qrCodeCanvas.value) return
+  
+  try {
+    const joinUrl = `${window.location.origin}/join/${props.sessionId}`
+    const size = props.square ? 60 : 72
+    await QRCode.toCanvas(qrCodeCanvas.value, joinUrl, {
+      width: size,
+      margin: 0,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    })
+  } catch (err) {
+    console.error('Failed to generate QR code:', err)
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
   await loadCharacters()
+  await nextTick()
+  await generateQRCode()
   const unsubscribe = subscribeToCharacterChanges()
   
   onUnmounted(() => {
@@ -120,8 +156,8 @@ onMounted(async () => {
 }
 
 .party-bar h3 {
-  margin: 0 0 2rem;
-  font-size: 1.5rem;
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
   text-align: center;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   color: white;
@@ -141,6 +177,28 @@ onMounted(async () => {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
+}
+
+.qr-card {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.qr-code-container {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+}
+
+.qr-code {
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .character-portrait {
@@ -196,10 +254,144 @@ onMounted(async () => {
   color: rgba(255, 255, 255, 0.7);
 }
 
+/* Compact mode for fitting more players */
+.party-bar.compact .party-grid {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.party-bar.compact .character-card {
+  padding: 0.75rem;
+}
+
+.party-bar.compact .character-portrait {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 0.75rem;
+}
+
+.party-bar.compact .character-info h4 {
+  font-size: 1rem;
+  margin: 0 0 0.25rem;
+}
+
+.party-bar.compact .character-type {
+  font-size: 0.8rem;
+}
+
+.party-bar.compact .no-portrait {
+  font-size: 1.5rem;
+}
+
+.party-bar.compact .hand-raised {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+/* Square mode for horizontal layout */
+.party-bar.square .party-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: center;
+}
+
+.party-bar.square .character-card {
+  padding: 0.15rem;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.party-bar.square .character-portrait {
+  width: 65px;
+  height: 65px;
+  margin: 0 auto 0.05rem;
+  flex-shrink: 0;
+}
+
+.party-bar.square .character-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.party-bar.square .character-info h4 {
+  font-size: 0.7rem;
+  margin: 0;
+  line-height: 1;
+  text-align: center;
+  word-break: break-word;
+  padding: 0;
+}
+
+.party-bar.square .character-type {
+  font-size: 0.7rem;
+  display: none; /* Hide type in square mode to save space */
+}
+
+.party-bar.square .no-portrait {
+  font-size: 1.5rem;
+}
+
+.party-bar.square .hand-raised {
+  font-size: 0.6rem;
+  margin-top: 0.05rem;
+}
+
+.party-bar.square .qr-code-container {
+  width: 65px;
+  height: 65px;
+  margin: 0 auto 0.05rem;
+  padding: 0.125rem;
+}
+
+.party-bar.square .qr-card .character-info h4 {
+  font-size: 0.65rem;
+  margin: 0;
+  line-height: 1;
+  padding: 0;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .party-grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  
+  .party-bar.compact .party-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  
+  .party-bar.square .character-card {
+    width: 85px;
+    height: 85px;
+    padding: 0.15rem;
+  }
+  
+  .party-bar.square .character-portrait {
+    width: 55px;
+    height: 55px;
+  }
+  
+  .party-bar.square .character-info h4 {
+    font-size: 0.65rem;
+  }
+  
+  .party-bar.square .no-portrait {
+    font-size: 1.2rem;
+  }
+  
+  .party-bar.square .qr-code-container {
+    width: 55px;
+    height: 55px;
+    margin: 0 auto 0.1rem;
   }
 }
 </style>
