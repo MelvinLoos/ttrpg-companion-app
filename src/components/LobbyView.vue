@@ -35,6 +35,24 @@
       </p>
     </header>
 
+    <!-- Notifications -->
+    <div v-if="notifications.length > 0" class="notifications-container">
+      <div 
+        v-for="notification in notifications" 
+        :key="notification.id" 
+        class="notification"
+        :class="`notification-${notification.type}`"
+      >
+        <span class="notification-message">{{ notification.message }}</span>
+        <button 
+          @click="dismissNotification(notification.id)" 
+          class="notification-dismiss"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
     <div v-if="selectedSessionId === 'none'" class="no-session-selected">
       <h3>Player Join Disabled</h3>
       <p>No active session - players cannot join at this time.</p>
@@ -52,6 +70,12 @@
           </p>
         </div>
       </div>
+
+      <!-- Session State Management -->
+      <GmSessionControl 
+        :current-session="currentSession"
+        :player-count="currentPlayers.length"
+      />
 
       <div class="lobby-controls">
         <div class="player-section">
@@ -109,11 +133,16 @@ import { useSessionStore } from '../stores/session'
 import { supabase } from '../plugins/supabase'
 import type { SessionCharacter } from '../types/session'
 import QRCode from 'qrcode'
+import GmSessionControl from './GmSessionControl.vue'
 
 const sessionStore = useSessionStore()
 const selectedSessionId = ref<string>('')
 const characterSubscription = ref<(() => void) | null>(null)
 const localCharacters = ref<SessionCharacter[]>([])
+
+// Notification state
+const notifications = ref<{id: number, message: string, type: 'success' | 'info' | 'warning'}[]>([])
+let notificationIdCounter = 1
 
 // Computed properties
 const currentSession = computed(() => 
@@ -162,6 +191,8 @@ function subscribeToCharacterChanges() {
         // Check if character already exists to avoid duplicates
         if (!localCharacters.value.find(c => c.id === newCharacter.id)) {
           localCharacters.value = [...localCharacters.value, newCharacter]
+          // Show notification for new player join
+          addNotification(`${newCharacter.name} joined the session!`, 'success')
         }
       } else if (payload.eventType === 'UPDATE' && payload.new) {
         const updated = payload.new as SessionCharacter
@@ -171,7 +202,10 @@ function subscribeToCharacterChanges() {
       } else if (payload.eventType === 'DELETE') {
         const deletedRecord = (payload.old || payload.new) as SessionCharacter | null
         if (deletedRecord?.id) {
+          const playerName = deletedRecord.name || 'A player'
           localCharacters.value = localCharacters.value.filter(c => c.id !== deletedRecord.id)
+          // Show notification for player leaving
+          addNotification(`${playerName} left the session`, 'warning')
         }
       }
     })
@@ -209,6 +243,28 @@ watch(currentSession, async (newSession, oldSession) => {
     subscribeToCharacterChanges()
   }
 }, { immediate: true })
+
+// Notification methods
+function addNotification(message: string, type: 'success' | 'info' | 'warning' = 'info') {
+  const notification = {
+    id: notificationIdCounter++,
+    message,
+    type
+  }
+  notifications.value.push(notification)
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    dismissNotification(notification.id)
+  }, 5000)
+}
+
+function dismissNotification(notificationId: number) {
+  const index = notifications.value.findIndex(n => n.id === notificationId)
+  if (index > -1) {
+    notifications.value.splice(index, 1)
+  }
+}
 
 // Image handling
 function handleImageError(event: Event) {
@@ -342,10 +398,10 @@ onUnmounted(() => {
 
 <style scoped>
 .lobby-view {
-  padding: 0.25rem;
-  height: 100%;
+  padding: 0.125rem;
+  height: 100vh;
   width: 100%;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -353,16 +409,16 @@ onUnmounted(() => {
 .lobby-header {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
 }
 
 .lobby-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
 }
 
 .header-controls {
@@ -393,6 +449,82 @@ onUnmounted(() => {
   color: white;
   font-size: 0.9rem;
   min-width: 200px;
+}
+
+/* Notifications */
+.notifications-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 400px;
+}
+
+.notification {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification-success {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+  color: #047857;
+}
+
+.notification-info {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+  color: #1e40af;
+}
+
+.notification-warning {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+  color: #92400e;
+}
+
+.notification-message {
+  font-weight: 500;
+  flex: 1;
+}
+
+.notification-dismiss {
+  background: none;
+  border: none;
+  color: currentColor;
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 0;
+  margin-left: 1rem;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+.notification-dismiss:hover {
+  opacity: 1;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .session-selector select option {
@@ -440,10 +572,10 @@ onUnmounted(() => {
 .lobby-content {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .session-display {
@@ -452,7 +584,7 @@ onUnmounted(() => {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.05);
   width: 100%;
-  height: 400px;
+  height: 200px;
   flex-shrink: 0;
 }
 
@@ -477,22 +609,22 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 2rem;
+  padding: 1rem;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
   color: white;
   z-index: 2;
 }
 
 .session-title {
-  margin: 0 0 0.5rem;
-  font-size: 2rem;
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
   font-weight: bold;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .session-teaser {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   opacity: 0.9;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
@@ -500,7 +632,7 @@ onUnmounted(() => {
 .lobby-controls {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.75rem;
   height: auto;
 }
 
@@ -508,32 +640,32 @@ onUnmounted(() => {
 .join-section {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .player-section h3,
 .join-section h3 {
-  margin: 0 0 1rem;
-  font-size: 1.1rem;
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
   color: rgba(255, 255, 255, 0.9);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
 }
 
 .player-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-height: 180px;
+  gap: 0.25rem;
+  max-height: 120px;
   overflow-y: auto;
 }
 
 .player-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem;
+  gap: 0.5rem;
+  padding: 0.25rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -607,7 +739,7 @@ onUnmounted(() => {
 .join-info {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .join-info p {
@@ -653,7 +785,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .qr-code {
@@ -670,7 +802,7 @@ onUnmounted(() => {
 
 .qr-placeholder {
   aspect-ratio: 1;
-  width: 120px;
+  width: 100px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 0.25rem;
   display: flex;
@@ -678,7 +810,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   border: 2px dashed rgba(255, 255, 255, 0.2);
-  padding: 0.5rem;
+  padding: 0.25rem;
   text-align: center;
 }
 
@@ -717,11 +849,15 @@ onUnmounted(() => {
   }
   
   .session-display {
-    height: 250px;
+    height: 150px;
   }
   
   .session-title {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
+  }
+  
+  .session-overlay {
+    padding: 0.75rem;
   }
 }
 

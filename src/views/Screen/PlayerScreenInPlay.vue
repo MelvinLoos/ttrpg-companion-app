@@ -1,5 +1,5 @@
 <template>
-  <div class="player-screen-lobby">
+  <div class="player-screen-in-play">
     <!-- Background image display -->
     <div 
       v-if="session?.active_image_url" 
@@ -14,26 +14,36 @@
       <header class="session-header">
         <h1 v-if="session?.name" class="session-name">{{ session.name }}</h1>
         <h1 v-else>Loading Session...</h1>
-        <p v-if="session?.teaser_text" class="teaser-text">{{ session.teaser_text }}</p>
+        <div v-if="session?.teaser_text" class="scene-subtitle">
+          {{ session.teaser_text }}
+        </div>
       </header>
 
       <!-- Main content area -->
-      <main class="lobby-main">
-        <!-- QR Code for joining -->
-        <div class="qr-section">
-          <div class="qr-container">
-            <div id="qr-code" class="qr-code"></div>
+      <main class="in-play-main">
+        <!-- Overlay containers for party and session info -->
+        <div class="overlay-containers">
+          <!-- Session info - Top Right -->
+          <div class="session-info">
+            <h4>Session Details</h4>
+            <div class="details-grid">
+              <div class="detail-item status-item">
+                <span class="status-badge" :class="statusClass">{{ statusText }}</span>
+              </div>
+              <div class="detail-item" v-if="session?.created_at">
+                <span class="label">Started:</span>
+                <span class="value">{{ formatDate(session.created_at) }}</span>
+              </div>
+            </div>
           </div>
-          <div class="join-info">
-            <h3>Join the Adventure</h3>
-            <p>Scan the QR code or visit:</p>
-            <code class="join-url">{{ joinUrl }}</code>
-          </div>
-        </div>
 
-        <!-- Party members display -->
-        <div class="party-section">
-          <PartyBar :session-id="route.params.session_id as string" :hide-qr="!shouldShowQR" />
+          <!-- Bottom section with party -->
+          <div class="bottom-section">
+            <!-- Party members display -->
+            <div class="party-section">
+              <PartyBar :session-id="route.params.session_id as string" :compact="true" :square="true" />
+            </div>
+          </div>
         </div>
       </main>
     </div>
@@ -85,7 +95,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import QRCode from 'qrcode'
 import type { GameSession } from '../../types/session'
 import { supabase } from '../../plugins/supabase'
 import PartyBar from '../../components/PartyBar.vue'
@@ -96,36 +105,50 @@ const route = useRoute()
 const session = ref<GameSession | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
-
-// Fullscreen state
-const isFullscreen = ref(false)
+const playerCount = ref(0)
 
 // Notification state
 const notifications = ref<{id: number, message: string, type: 'success' | 'info' | 'warning'}[]>([])
 let notificationIdCounter = 1
 
+// Fullscreen state
+const isFullscreen = ref(false)
+
 // Computed
-const joinUrl = computed(() => {
-  const baseUrl = window.location.origin
-  return `${baseUrl}/join/${route.params.session_id}`
+const statusText = computed(() => {
+  switch (session.value?.state) {
+    case 'IN_PLAY':
+      return 'In Progress'
+    case 'PAUSED':
+      return 'Paused'
+    case 'LOBBY':
+      return 'In Lobby'
+    default:
+      return 'Unknown'
+  }
 })
 
-const shouldShowQR = computed(() => {
-  // Show QR code in party when session has started (IN_PLAY or PAUSED) 
-  // Hide it in LOBBY state since standalone QR join section is visible
-  return session.value?.state === 'IN_PLAY' || session.value?.state === 'PAUSED'
+const statusClass = computed(() => {
+  switch (session.value?.state) {
+    case 'IN_PLAY':
+      return 'status-active'
+    case 'PAUSED':
+      return 'status-paused'
+    case 'LOBBY':
+      return 'status-lobby'
+    default:
+      return 'status-unknown'
+  }
 })
 
 // Notification methods
 function addNotification(message: string, type: 'success' | 'info' | 'warning' = 'info') {
-  console.log('PlayerScreenLobby: Adding notification', { message, type })
   const notification = {
     id: notificationIdCounter++,
     message,
     type
   }
   notifications.value.push(notification)
-  console.log('PlayerScreenLobby: Current notifications', notifications.value)
   
   // Auto-dismiss after 5 seconds
   setTimeout(() => {
@@ -158,6 +181,9 @@ async function loadSessionData() {
 
     session.value = sessionData
 
+    // Load player count
+    await loadPlayerCount(sessionId)
+
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load session'
   } finally {
@@ -165,31 +191,18 @@ async function loadSessionData() {
   }
 }
 
-async function generateQRCode() {
-  const qrElement = document.getElementById('qr-code')
-  if (qrElement && joinUrl.value) {
-    try {
-      const canvas = document.createElement('canvas')
-      await QRCode.toCanvas(canvas, joinUrl.value, {
-        width: 200,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
-      })
-      qrElement.innerHTML = ''
-      qrElement.appendChild(canvas)
-    } catch (err) {
-      console.error('Failed to generate QR code:', err)
-      // Fallback to placeholder
-      qrElement.innerHTML = `
-        <div class="qr-placeholder">
-          <div>QR Code</div>
-          <div style="font-size: 0.8rem; margin-top: 0.5rem;">${joinUrl.value}</div>
-        </div>
-      `
-    }
+async function loadPlayerCount(sessionId: string) {
+  try {
+    const { count, error: countError } = await supabase
+      .from('session_characters')
+      .select('*', { count: 'exact', head: true })
+      .eq('session_id', sessionId)
+
+    if (countError) throw countError
+    playerCount.value = count || 0
+  } catch (err) {
+    console.error('Failed to load player count:', err)
+    playerCount.value = 0
   }
 }
 
@@ -198,7 +211,7 @@ function subscribeToSessionChanges() {
   
   // Subscribe to session changes
   const sessionSubscription = supabase
-    .channel(`session-${sessionId}`)
+    .channel(`session-inplay-${sessionId}`)
     .on('postgres_changes', {
       event: '*',
       schema: 'public',
@@ -210,31 +223,39 @@ function subscribeToSessionChanges() {
         const oldState = session.value?.state
         const newState = newSession.state
         
-        console.log('PlayerScreenLobby: Session state change detected', { oldState, newState })
-        
-        // Check if session started (transitioned to IN_PLAY)
+        // Check for state transitions and show notifications
         if (oldState === 'LOBBY' && newState === 'IN_PLAY') {
-          console.log('PlayerScreenLobby: Adding session start notification')
           addNotification(`🎮 Session has started! The adventure begins now!`, 'success')
         } else if (oldState === 'IN_PLAY' && newState === 'LOBBY') {
-          console.log('PlayerScreenLobby: Adding session end notification')
           addNotification('📋 Session ended. Thanks for playing!', 'info')
         } else if (oldState === 'IN_PLAY' && newState === 'PAUSED') {
-          console.log('PlayerScreenLobby: Adding session pause notification')
           addNotification('⏸️ Session paused. Stand by...', 'warning')
         } else if (oldState === 'PAUSED' && newState === 'IN_PLAY') {
-          console.log('PlayerScreenLobby: Adding session resume notification')
           addNotification('▶️ Session resumed! Back to the adventure!', 'success')
         }
         
         session.value = newSession
       }
     })
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'session_characters',
+      filter: `session_id=eq.${sessionId}`
+    }, () => {
+      // Reload player count when characters change
+      loadPlayerCount(sessionId)
+    })
     .subscribe()
 
   return () => {
     sessionSubscription.unsubscribe()
   }
+}
+
+function formatDate(dateString: string) {
+  const date = new Date(dateString)
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 // Fullscreen functionality
@@ -261,11 +282,6 @@ function handleFullscreenChange() {
 onMounted(async () => {
   await loadSessionData()
   const unsubscribe = subscribeToSessionChanges()
-  
-  // Generate QR code after DOM is ready
-  if (!error.value) {
-    setTimeout(generateQRCode, 100)
-  }
 
   // Add fullscreen event listener
   document.addEventListener('fullscreenchange', handleFullscreenChange)
@@ -278,7 +294,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.player-screen-lobby {
+.player-screen-in-play {
   min-height: 100vh;
   position: relative;
   display: flex;
@@ -295,7 +311,7 @@ onMounted(async () => {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: brightness(0.4);
+  filter: brightness(0.7);
   z-index: 1;
 }
 
@@ -305,7 +321,7 @@ onMounted(async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f29 50%, #0f1419 100%);
   z-index: 1;
 }
 
@@ -313,169 +329,191 @@ onMounted(async () => {
 .content-overlay {
   position: relative;
   z-index: 2;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  color: white;
-  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
 }
 
-/* Header */
+/* Session Header */
 .session-header {
   text-align: center;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
+  padding: 0.6rem 1rem 0.3rem;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.3));
   flex-shrink: 0;
 }
 
 .session-name {
   font-size: 2.5rem;
   font-weight: bold;
+  color: white;
   margin: 0 0 0.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
-.teaser-text {
+.scene-subtitle {
+  color: rgba(255, 255, 255, 0.9);
   font-size: 1.1rem;
-  margin: 0;
+  font-style: italic;
+  margin: 0 0 1rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  line-height: 1.4;
+  padding: 0;
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-  opacity: 0.9;
 }
 
-/* Main content */
-.lobby-main {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  align-items: start;
-  padding: 0 1rem 1rem;
-  overflow: hidden;
+.session-status {
+  margin-top: 0.5rem;
 }
 
-/* QR Section */
-.qr-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.qr-container {
-  background: white;
-  padding: 0.75rem;
-  border-radius: 1rem;
-  margin-bottom: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-.qr-code {
-  width: 180px;
-  height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.qr-placeholder {
-  width: 100%;
-  height: 100%;
-  background: #f0f0f0;
-  border: 2px dashed #ccc;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.join-info h3 {
-  margin: 0 0 1rem;
-  font-size: 1.5rem;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.join-info p {
-  margin: 0 0 0.5rem;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.join-url {
-  background: rgba(0, 0, 0, 0.6);
+.status-badge {
+  display: inline-block;
   padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-family: monospace;
-  font-size: 1rem;
-  word-break: break-all;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Party section */
-.party-section {
-  width: 100%;
+.status-active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
 }
 
-/* Loading and Error overlays */
-.loading-overlay,
-.error-overlay {
+.status-paused {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+.status-lobby {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: white;
+  box-shadow: 0 0 20px rgba(107, 114, 128, 0.4);
+}
+
+.status-unknown {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+}
+
+/* Main Content */
+.in-play-main {
+  flex: 1;
+  position: relative;
+  height: calc(100vh - 120px); /* Subtract header height */
+  overflow: hidden;
+  padding: 1rem;
+}
+
+.overlay-containers {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.9);
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem 1rem 0;
+  pointer-events: none;
+  gap: 1rem;
+}
+
+.overlay-containers > * {
+  pointer-events: auto;
+}
+
+.session-info {
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 0.75rem;
+  backdrop-filter: blur(10px);
+  max-width: 200px;
+  align-self: flex-end;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.bottom-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  align-self: flex-end;
+}
+
+.party-section {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  padding: 0.4rem 0.6rem 0.2rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  width: 100%;
+}
+
+.scene-description {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  width: 100%;
+}
+
+.scene-description p {
+  color: white;
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  text-align: center;
+}
+
+/* Session Info - Now overlaid */
+
+.scene-display {
+  width: 100%;
+  height: 100%;
+  display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
-  color: white;
 }
 
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top: 3px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.scene-display img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.no-scene {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: linear-gradient(135deg, #1a1f29 0%, #0f1419 100%);
+}
+
+.no-scene-placeholder span {
+  font-size: 4rem;
+  display: block;
   margin-bottom: 1rem;
+  opacity: 0.7;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.error-message {
-  text-align: center;
-  max-width: 400px;
-}
-
-.error-message h3 {
-  margin: 0 0 1rem;
-  color: #ff6b6b;
-}
-
-.error-message p {
+.no-scene-placeholder p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.5rem;
   margin: 0;
-  opacity: 0.8;
-}
-
-/* Responsive design */
-@media (max-width: 1024px) {
-  .lobby-main {
-    grid-template-columns: 1fr;
-    gap: 3rem;
-  }
-  
-  .session-name {
-    font-size: 2.5rem;
-  }
 }
 
 /* Fullscreen Button */
@@ -506,6 +544,99 @@ onMounted(async () => {
   color: white;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Session Info - Now overlaid */
+.session-info {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1rem;
+  padding: 1rem;
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+
+.session-info h4 {
+  color: white;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.status-item {
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
+.status-item .status-badge {
+  width: 100%;
+  text-align: center;
+  justify-self: center;
+}
+
+.label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.value {
+  color: white;
+  font-weight: 600;
+}
+
+/* Loading and Error States */
+.loading-overlay,
+.error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  z-index: 10;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  text-align: center;
+  max-width: 400px;
+}
+
+.error-message h3 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
 }
 
 /* Notifications */
@@ -584,24 +715,61 @@ onMounted(async () => {
   }
 }
 
+/* Responsive design */
 @media (max-width: 768px) {
-  .lobby-main {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    padding: 0 0.5rem 0.5rem;
-  }
-  
   .session-name {
     font-size: 2rem;
   }
-  
-  .teaser-text {
+
+  .scene-subtitle {
     font-size: 1rem;
+    margin: 0 0 0.75rem;
+    max-width: 400px;
   }
-  
-  .qr-code {
-    width: 150px;
-    height: 150px;
+
+  .in-play-main {
+    padding: 0.5rem;
+  }
+
+  .overlay-containers {
+    padding: 0.5rem 0.5rem 0;
+  }
+
+  .session-info {
+    max-width: none;
+    align-self: stretch;
+  }
+
+  .fullscreen-btn {
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 0.9rem;
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .details-grid {
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .session-name {
+    font-size: 1.5rem;
+  }
+
+  .scene-subtitle {
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem;
+    max-width: 300px;
+  }
+
+  .overlay-containers {
+    padding: 0.25rem 0.25rem 0;
+  }
+
+  .session-info {
+    padding: 0.75rem;
   }
 }
 </style>
