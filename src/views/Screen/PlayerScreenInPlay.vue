@@ -612,7 +612,7 @@ onMounted(async () => {
 .notifications-container {
   position: fixed;
   top: 1rem;
-  right: 1rem;
+  right: 4rem; /* Move notifications to the left of the fullscreen button */
   z-index: 1000;
   display: flex;
   flex-direction: column;

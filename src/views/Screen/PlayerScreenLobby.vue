@@ -38,6 +38,16 @@
       </main>
     </div>
 
+    <!-- Fullscreen toggle button in corner -->
+    <button 
+      @click="toggleFullscreen" 
+      class="fullscreen-btn"
+      :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'"
+    >
+      <span v-if="isFullscreen">⤓</span>
+      <span v-else>⤢</span>
+    </button>
+
     <!-- Notifications -->
     <div v-if="notifications.length > 0" class="notifications-container">
       <div 
@@ -86,6 +96,9 @@ const route = useRoute()
 const session = ref<GameSession | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+// Fullscreen state
+const isFullscreen = ref(false)
 
 // Notification state
 const notifications = ref<{id: number, message: string, type: 'success' | 'info' | 'warning'}[]>([])
@@ -224,6 +237,26 @@ function subscribeToSessionChanges() {
   }
 }
 
+// Fullscreen functionality
+async function toggleFullscreen() {
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen()
+      isFullscreen.value = true
+    } else {
+      await document.exitFullscreen()
+      isFullscreen.value = false
+    }
+  } catch (error) {
+    console.error('Error toggling fullscreen:', error)
+  }
+}
+
+// Listen for fullscreen changes from other sources (like F11)
+function handleFullscreenChange() {
+  isFullscreen.value = !!document.fullscreenElement
+}
+
 // Lifecycle
 onMounted(async () => {
   await loadSessionData()
@@ -234,8 +267,12 @@ onMounted(async () => {
     setTimeout(generateQRCode, 100)
   }
 
+  // Add fullscreen event listener
+  document.addEventListener('fullscreenchange', handleFullscreenChange)
+
   onUnmounted(() => {
     unsubscribe()
+    document.removeEventListener('fullscreenchange', handleFullscreenChange)
   })
 })
 </script>
@@ -441,11 +478,41 @@ onMounted(async () => {
   }
 }
 
+/* Fullscreen Button */
+.fullscreen-btn {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.375rem;
+  padding: 0.375rem;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-size: 1rem;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fullscreen-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 /* Notifications */
 .notifications-container {
   position: fixed;
   top: 1rem;
-  right: 1rem;
+  right: 4rem; /* Move notifications to the left of the fullscreen button */
   z-index: 1000;
   display: flex;
   flex-direction: column;
