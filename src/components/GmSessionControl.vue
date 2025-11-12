@@ -18,14 +18,22 @@
         {{ loading ? 'Starting...' : 'Start Session' }}
       </button>
       
-      <button 
-        v-else-if="currentSession?.state === 'IN_PLAY'"
-        @click="endSession"
-        :disabled="loading"
-        class="end-btn"
-      >
-        {{ loading ? 'Ending...' : 'End Session' }}
-      </button>
+      <template v-else-if="currentSession?.state === 'IN_PLAY'">
+        <button 
+          @click="pauseSession"
+          :disabled="loading"
+          class="pause-btn"
+        >
+          {{ loading ? 'Pausing...' : 'Pause Session' }}
+        </button>
+        <button 
+          @click="endSession"
+          :disabled="loading"
+          class="end-btn"
+        >
+          {{ loading ? 'Ending...' : 'End Session' }}
+        </button>
+      </template>
       
       <button 
         v-else-if="currentSession?.state === 'PAUSED'"
@@ -139,6 +147,31 @@ async function endSession() {
   }
 }
 
+async function pauseSession() {
+  if (!props.currentSession || loading.value) return
+  
+  try {
+    loading.value = true
+    
+    const { error } = await supabase
+      .from('sessions')
+      .update({ 
+        state: 'PAUSED',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', props.currentSession.id)
+    
+    if (error) throw error
+    
+    console.log(`Session ${props.currentSession.name} paused`)
+  } catch (error) {
+    console.error('Failed to pause session:', error)
+    alert('Failed to pause session. Please try again.')
+  } finally {
+    loading.value = false
+  }
+}
+
 async function resumeSession() {
   if (!props.currentSession || loading.value) return
   
@@ -237,8 +270,9 @@ async function resumeSession() {
 
 .session-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .session-actions button {
@@ -260,6 +294,18 @@ async function resumeSession() {
 .start-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #059669, #047857);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.pause-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.pause-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
 
 .end-btn {
