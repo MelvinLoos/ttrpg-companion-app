@@ -15,6 +15,7 @@ export type Database = {
           gm_id: string;
           name: string;
           showing: "lobby" | "combat";
+          state: "LOBBY" | "IN_PLAY" | "PAUSED";
           active_image_url: string | null;
           teaser_text: string | null;
           active_turn_character_id: string | null;
@@ -26,6 +27,7 @@ export type Database = {
           gm_id: string;
           name: string;
           showing?: "lobby" | "combat";
+          state?: "LOBBY" | "IN_PLAY" | "PAUSED";
           active_image_url?: string | null;
           teaser_text?: string | null;
           active_turn_character_id?: string | null;
@@ -37,6 +39,7 @@ export type Database = {
           gm_id?: string;
           name?: string;
           showing?: "lobby" | "combat";
+          state?: "LOBBY" | "IN_PLAY" | "PAUSED";
           active_image_url?: string | null;
           teaser_text?: string | null;
           active_turn_character_id?: string | null;
