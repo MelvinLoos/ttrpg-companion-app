@@ -28,7 +28,7 @@
             <h4>Session Details</h4>
             <div class="details-grid">
               <div class="detail-item status-item">
-                <span class="status-badge status-active">{{ statusText }}</span>
+                <span class="status-badge" :class="statusClass">{{ statusText }}</span>
               </div>
               <div class="detail-item" v-if="session?.created_at">
                 <span class="label">Started:</span>
@@ -125,6 +125,19 @@ const statusText = computed(() => {
       return 'In Lobby'
     default:
       return 'Unknown'
+  }
+})
+
+const statusClass = computed(() => {
+  switch (session.value?.state) {
+    case 'IN_PLAY':
+      return 'status-active'
+    case 'PAUSED':
+      return 'status-paused'
+    case 'LOBBY':
+      return 'status-lobby'
+    default:
+      return 'status-unknown'
   }
 })
 
@@ -369,6 +382,24 @@ onMounted(async () => {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+.status-paused {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+.status-lobby {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: white;
+  box-shadow: 0 0 20px rgba(107, 114, 128, 0.4);
+}
+
+.status-unknown {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
 }
 
 /* Main Content */
