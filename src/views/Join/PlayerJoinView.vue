@@ -1,5 +1,23 @@
 <template>
   <div class="player-join">
+    <!-- Notifications -->
+    <div v-if="notifications.length > 0" class="notifications-container">
+      <div 
+        v-for="notification in notifications" 
+        :key="notification.id" 
+        class="notification"
+        :class="`notification-${notification.type}`"
+      >
+        <span class="notification-message">{{ notification.message }}</span>
+        <button 
+          @click="dismissNotification(notification.id)" 
+          class="notification-dismiss"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div v-if="loading" class="loading-overlay">
       <div class="loading-spinner"></div>
@@ -194,6 +212,10 @@ const error = ref<string | null>(null)
 const session = ref<GameSession | null>(null)
 const isJoining = ref(false)
 
+// Notification state
+const notifications = ref<{id: number, message: string, type: 'success' | 'info' | 'warning'}[]>([])
+let notificationIdCounter = 1
+
 // Character creation state
 const characterType = ref<'new' | 'premade'>('new')
 const characterName = ref('')
@@ -232,6 +254,28 @@ const canJoin = computed(() => {
     return selectedPremadeId.value !== null && premadeCharacters.value.length > 0
   }
 })
+
+// Notification methods
+function addNotification(message: string, type: 'success' | 'info' | 'warning' = 'info') {
+  const notification = {
+    id: notificationIdCounter++,
+    message,
+    type
+  }
+  notifications.value.push(notification)
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    dismissNotification(notification.id)
+  }, 5000)
+}
+
+function dismissNotification(notificationId: number) {
+  const index = notifications.value.findIndex(n => n.id === notificationId)
+  if (index > -1) {
+    notifications.value.splice(index, 1)
+  }
+}
 
 // Methods
 async function loadSession() {
@@ -490,6 +534,41 @@ function subscribeToPlayers() {
   return () => subscription.unsubscribe()
 }
 
+function subscribeToSessionChanges() {
+  if (!session.value) return () => {}
+
+  const subscription = supabase
+    .channel(`join-session-${session.value.id}`)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'sessions',
+      filter: `id=eq.${session.value.id}`
+    }, (payload) => {
+      if (payload.eventType === 'UPDATE' && payload.new) {
+        const newSession = payload.new as GameSession
+        const oldState = session.value?.state
+        const newState = newSession.state
+        
+        // Check for state transitions and show notifications
+        if (oldState === 'LOBBY' && newState === 'IN_PLAY') {
+          addNotification(`🎮 Session has started! The adventure begins now!`, 'success')
+        } else if (oldState === 'IN_PLAY' && newState === 'LOBBY') {
+          addNotification('📋 Session ended. Thanks for playing!', 'info')
+        } else if (oldState === 'IN_PLAY' && newState === 'PAUSED') {
+          addNotification('⏸️ Session paused. Stand by...', 'warning')
+        } else if (oldState === 'PAUSED' && newState === 'IN_PLAY') {
+          addNotification('▶️ Session resumed! Back to the adventure!', 'success')
+        }
+        
+        session.value = newSession
+      }
+    })
+    .subscribe()
+
+  return () => subscription.unsubscribe()
+}
+
 // Watch for changes to available premade characters and reset selection if needed
 watch(premadeCharacters, (availableCharacters) => {
   // If a premade character was selected but is no longer available, reset the selection
@@ -504,10 +583,12 @@ watch(premadeCharacters, (availableCharacters) => {
 // Lifecycle
 onMounted(async () => {
   await loadSession()
-  const unsubscribe = subscribeToPlayers()
+  const unsubscribePlayers = subscribeToPlayers()
+  const unsubscribeSession = subscribeToSessionChanges()
   
   onUnmounted(() => {
-    unsubscribe()
+    unsubscribePlayers()
+    unsubscribeSession()
     if (portraitPreview.value) {
       URL.revokeObjectURL(portraitPreview.value)
     }
@@ -970,6 +1051,82 @@ onMounted(async () => {
 .player-name {
   font-weight: 500;
   color: rgba(255, 255, 255, 0.87);
+}
+
+/* Notifications */
+.notifications-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 400px;
+}
+
+.notification {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification-success {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+  color: #047857;
+}
+
+.notification-info {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+  color: #1e40af;
+}
+
+.notification-warning {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+  color: #92400e;
+}
+
+.notification-message {
+  font-weight: 500;
+  flex: 1;
+}
+
+.notification-dismiss {
+  background: none;
+  border: none;
+  color: currentColor;
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 0;
+  margin-left: 1rem;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+.notification-dismiss:hover {
+  opacity: 1;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* Responsive design */

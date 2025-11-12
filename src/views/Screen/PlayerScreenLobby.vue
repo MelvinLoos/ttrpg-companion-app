@@ -38,6 +38,24 @@
       </main>
     </div>
 
+    <!-- Notifications -->
+    <div v-if="notifications.length > 0" class="notifications-container">
+      <div 
+        v-for="notification in notifications" 
+        :key="notification.id" 
+        class="notification"
+        :class="`notification-${notification.type}`"
+      >
+        <span class="notification-message">{{ notification.message }}</span>
+        <button 
+          @click="dismissNotification(notification.id)" 
+          class="notification-dismiss"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
     <!-- Loading state -->
     <div v-if="loading" class="loading-overlay">
       <div class="loading-spinner"></div>
@@ -69,11 +87,39 @@ const session = ref<GameSession | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+// Notification state
+const notifications = ref<{id: number, message: string, type: 'success' | 'info' | 'warning'}[]>([])
+let notificationIdCounter = 1
+
 // Computed
 const joinUrl = computed(() => {
   const baseUrl = window.location.origin
   return `${baseUrl}/join/${route.params.session_id}`
 })
+
+// Notification methods
+function addNotification(message: string, type: 'success' | 'info' | 'warning' = 'info') {
+  console.log('PlayerScreenLobby: Adding notification', { message, type })
+  const notification = {
+    id: notificationIdCounter++,
+    message,
+    type
+  }
+  notifications.value.push(notification)
+  console.log('PlayerScreenLobby: Current notifications', notifications.value)
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    dismissNotification(notification.id)
+  }, 5000)
+}
+
+function dismissNotification(notificationId: number) {
+  const index = notifications.value.findIndex(n => n.id === notificationId)
+  if (index > -1) {
+    notifications.value.splice(index, 1)
+  }
+}
 
 // Methods
 async function loadSessionData() {
@@ -141,7 +187,28 @@ function subscribeToSessionChanges() {
       filter: `id=eq.${sessionId}`
     }, (payload) => {
       if (payload.eventType === 'UPDATE' && payload.new) {
-        session.value = payload.new as GameSession
+        const newSession = payload.new as GameSession
+        const oldState = session.value?.state
+        const newState = newSession.state
+        
+        console.log('PlayerScreenLobby: Session state change detected', { oldState, newState })
+        
+        // Check if session started (transitioned to IN_PLAY)
+        if (oldState === 'LOBBY' && newState === 'IN_PLAY') {
+          console.log('PlayerScreenLobby: Adding session start notification')
+          addNotification(`🎮 Session has started! The adventure begins now!`, 'success')
+        } else if (oldState === 'IN_PLAY' && newState === 'LOBBY') {
+          console.log('PlayerScreenLobby: Adding session end notification')
+          addNotification('📋 Session ended. Thanks for playing!', 'info')
+        } else if (oldState === 'IN_PLAY' && newState === 'PAUSED') {
+          console.log('PlayerScreenLobby: Adding session pause notification')
+          addNotification('⏸️ Session paused. Stand by...', 'warning')
+        } else if (oldState === 'PAUSED' && newState === 'IN_PLAY') {
+          console.log('PlayerScreenLobby: Adding session resume notification')
+          addNotification('▶️ Session resumed! Back to the adventure!', 'success')
+        }
+        
+        session.value = newSession
       }
     })
     .subscribe()
@@ -203,30 +270,32 @@ onMounted(async () => {
 .content-overlay {
   position: relative;
   z-index: 2;
-  min-height: 100vh;
-  padding: 2rem;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   color: white;
+  overflow: hidden;
 }
 
 /* Header */
 .session-header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  flex-shrink: 0;
 }
 
 .session-name {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: bold;
-  margin: 0 0 1rem;
+  margin: 0 0 0.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .teaser-text {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   margin: 0;
-  max-width: 800px;
+  max-width: 600px;
   margin-left: auto;
   margin-right: auto;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
@@ -238,8 +307,10 @@ onMounted(async () => {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4rem;
+  gap: 2rem;
   align-items: start;
+  padding: 0 1rem 1rem;
+  overflow: hidden;
 }
 
 /* QR Section */
@@ -252,15 +323,15 @@ onMounted(async () => {
 
 .qr-container {
   background: white;
-  padding: 1rem;
+  padding: 0.75rem;
   border-radius: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .qr-code {
-  width: 200px;
-  height: 200px;
+  width: 180px;
+  height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -364,9 +435,87 @@ onMounted(async () => {
   }
 }
 
+/* Notifications */
+.notifications-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 400px;
+}
+
+.notification {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification-success {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+  color: #047857;
+}
+
+.notification-info {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+  color: #1e40af;
+}
+
+.notification-warning {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+  color: #92400e;
+}
+
+.notification-message {
+  font-weight: 500;
+  flex: 1;
+}
+
+.notification-dismiss {
+  background: none;
+  border: none;
+  color: currentColor;
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 0;
+  margin-left: 1rem;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+.notification-dismiss:hover {
+  opacity: 1;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 @media (max-width: 768px) {
-  .content-overlay {
-    padding: 1rem;
+  .lobby-main {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0 0.5rem 0.5rem;
   }
   
   .session-name {

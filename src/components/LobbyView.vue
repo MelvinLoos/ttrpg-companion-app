@@ -35,6 +35,24 @@
       </p>
     </header>
 
+    <!-- Notifications -->
+    <div v-if="notifications.length > 0" class="notifications-container">
+      <div 
+        v-for="notification in notifications" 
+        :key="notification.id" 
+        class="notification"
+        :class="`notification-${notification.type}`"
+      >
+        <span class="notification-message">{{ notification.message }}</span>
+        <button 
+          @click="dismissNotification(notification.id)" 
+          class="notification-dismiss"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
     <div v-if="selectedSessionId === 'none'" class="no-session-selected">
       <h3>Player Join Disabled</h3>
       <p>No active session - players cannot join at this time.</p>
@@ -52,6 +70,12 @@
           </p>
         </div>
       </div>
+
+      <!-- Session State Management -->
+      <GmSessionControl 
+        :current-session="currentSession"
+        :player-count="currentPlayers.length"
+      />
 
       <div class="lobby-controls">
         <div class="player-section">
@@ -109,11 +133,16 @@ import { useSessionStore } from '../stores/session'
 import { supabase } from '../plugins/supabase'
 import type { SessionCharacter } from '../types/session'
 import QRCode from 'qrcode'
+import GmSessionControl from './GmSessionControl.vue'
 
 const sessionStore = useSessionStore()
 const selectedSessionId = ref<string>('')
 const characterSubscription = ref<(() => void) | null>(null)
 const localCharacters = ref<SessionCharacter[]>([])
+
+// Notification state
+const notifications = ref<{id: number, message: string, type: 'success' | 'info' | 'warning'}[]>([])
+let notificationIdCounter = 1
 
 // Computed properties
 const currentSession = computed(() => 
@@ -162,6 +191,8 @@ function subscribeToCharacterChanges() {
         // Check if character already exists to avoid duplicates
         if (!localCharacters.value.find(c => c.id === newCharacter.id)) {
           localCharacters.value = [...localCharacters.value, newCharacter]
+          // Show notification for new player join
+          addNotification(`${newCharacter.name} joined the session!`, 'success')
         }
       } else if (payload.eventType === 'UPDATE' && payload.new) {
         const updated = payload.new as SessionCharacter
@@ -171,7 +202,10 @@ function subscribeToCharacterChanges() {
       } else if (payload.eventType === 'DELETE') {
         const deletedRecord = (payload.old || payload.new) as SessionCharacter | null
         if (deletedRecord?.id) {
+          const playerName = deletedRecord.name || 'A player'
           localCharacters.value = localCharacters.value.filter(c => c.id !== deletedRecord.id)
+          // Show notification for player leaving
+          addNotification(`${playerName} left the session`, 'warning')
         }
       }
     })
@@ -209,6 +243,28 @@ watch(currentSession, async (newSession, oldSession) => {
     subscribeToCharacterChanges()
   }
 }, { immediate: true })
+
+// Notification methods
+function addNotification(message: string, type: 'success' | 'info' | 'warning' = 'info') {
+  const notification = {
+    id: notificationIdCounter++,
+    message,
+    type
+  }
+  notifications.value.push(notification)
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    dismissNotification(notification.id)
+  }, 5000)
+}
+
+function dismissNotification(notificationId: number) {
+  const index = notifications.value.findIndex(n => n.id === notificationId)
+  if (index > -1) {
+    notifications.value.splice(index, 1)
+  }
+}
 
 // Image handling
 function handleImageError(event: Event) {
@@ -393,6 +449,82 @@ onUnmounted(() => {
   color: white;
   font-size: 0.9rem;
   min-width: 200px;
+}
+
+/* Notifications */
+.notifications-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 400px;
+}
+
+.notification {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification-success {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+  color: #047857;
+}
+
+.notification-info {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+  color: #1e40af;
+}
+
+.notification-warning {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+  color: #92400e;
+}
+
+.notification-message {
+  font-weight: 500;
+  flex: 1;
+}
+
+.notification-dismiss {
+  background: none;
+  border: none;
+  color: currentColor;
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 0;
+  margin-left: 1rem;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+.notification-dismiss:hover {
+  opacity: 1;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .session-selector select option {
