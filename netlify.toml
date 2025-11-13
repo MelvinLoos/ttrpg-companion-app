@@ -1,7 +1,3 @@
-[build]
-  publish = "dist"
-  command = "npm install && npm run build"
-
 # Node.js version specification
 [build.environment]
   NODE_VERSION = "18"
