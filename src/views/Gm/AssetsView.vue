@@ -35,29 +35,21 @@
           :key="asset.id" 
           class="asset-card"
         >
-          <div class="asset-preview">
-            <img 
-              v-if="asset.public_url"
-              :src="asset.public_url"
-              :alt="asset.friendly_name || 'Asset preview'"
-            />
-            <div v-else class="no-preview">
-              No Preview
-            </div>
+          <AssetPreview 
+            :asset="asset" 
+            :show-info="true"
+            :show-modal="true"
+          />
+          <div class="asset-actions">
+            <button 
+              class="delete-btn" 
+              @click="handleDelete(asset)"
+              :disabled="store.state.loading"
+              title="Delete Asset"
+            >
+              🗑️
+            </button>
           </div>
-          <div class="asset-info">
-            <p class="asset-name">{{ asset.friendly_name || 'Unnamed asset' }}</p>
-            <p class="asset-meta">
-              {{ formatDate(asset.created_at) }}
-            </p>
-          </div>
-          <button 
-            class="delete-btn" 
-            @click="handleDelete(asset)"
-            :disabled="store.state.loading"
-          >
-            Delete
-          </button>
         </div>
       </div>
     </div>
@@ -68,6 +60,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAssetStore, type Asset } from '../../stores/asset'
 import AssetUploader from '../../components/AssetUploader.vue'
+import AssetPreview from '../../components/AssetPreview.vue'
 
 const store = useAssetStore()
 const activeType = ref<Asset['asset_type']>('scene')
@@ -106,10 +99,6 @@ async function handleDelete(asset: Asset) {
       console.error('Delete failed:', error)
     }
   }
-}
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString()
 }
 
 // Lifecycle
@@ -180,83 +169,60 @@ onMounted(() => {
 
 .asset-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
 }
 
 .asset-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   overflow: hidden;
   position: relative;
+  transition: all 0.3s ease;
 }
 
-.asset-preview {
-  aspect-ratio: 16/9;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.2);
+.asset-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-.asset-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.no-preview {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.9rem;
-}
-
-.asset-info {
-  padding: 1rem;
-}
-
-.asset-name {
-  margin: 0;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.asset-meta {
-  margin: 0.25rem 0 0;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.delete-btn {
+.asset-actions {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: 0.25rem;
-  color: rgb(239, 68, 68);
-  font-size: 0.8rem;
-  cursor: pointer;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
   opacity: 0;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
-.asset-card:hover .delete-btn {
+.asset-card:hover .asset-actions {
   opacity: 1;
 }
 
+.delete-btn {
+  padding: 0.5rem;
+  background: rgba(239, 68, 68, 0.9);
+  border: none;
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 .delete-btn:hover {
-  background: rgba(239, 68, 68, 0.3);
+  background: rgba(220, 38, 38, 0.95);
+  transform: scale(1.1);
 }
 
 .delete-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 </style>

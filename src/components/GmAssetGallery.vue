@@ -25,37 +25,87 @@
     </div>
 
     <!-- Asset Grid -->
-    <div v-else-if="imageAssets.length > 0" class="asset-grid">
-      <div 
-        v-for="asset in imageAssets" 
-        :key="asset.id"
-        class="asset-thumbnail"
-        :class="{ active: asset.id === currentImageAssetId }"
-      >
-        <div class="thumbnail-image">
-          <img 
-            v-if="asset.public_url"
-            :src="asset.public_url"
-            :alt="asset.friendly_name || 'Scene asset'"
-            loading="lazy"
+    <div v-else-if="imageAssets.length > 0" class="asset-grid-wrapper">
+      <div class="asset-grid">
+        <div 
+          v-for="asset in paginatedAssets" 
+          :key="asset.id"
+          class="asset-thumbnail"
+          :class="{ active: asset.id === currentImageAssetId }"
+        >
+          <AssetPreview 
+            :asset="asset" 
+            :show-modal="true"
+            :lazy="false"
           />
-          <div v-else class="no-image">
-            📷
+          <div class="thumbnail-overlay">
+            <div class="overlay-actions">
+              <button 
+                @click.stop="openPreview(asset)"
+                class="preview-btn"
+                title="Preview Image"
+              >
+                🔍
+              </button>
+              <button 
+                @click="pushToScreen(asset)"
+                :disabled="pushing === asset.id"
+                class="push-btn"
+              >
+                {{ pushing === asset.id ? '⏳' : '📺' }}
+                {{ pushing === asset.id ? 'Pushing...' : 'Push to Screen' }}
+              </button>
+            </div>
           </div>
         </div>
-        <div class="thumbnail-overlay">
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="showPagination" class="pagination">
+        <button 
+          @click="prevPage"
+          :disabled="currentPage === 1 || changingPage"
+          class="pagination-btn"
+          title="Previous page"
+        >
+          ←
+        </button>
+        
+        <div class="pagination-info">
+          <!-- Show first page if not in range -->
+          <button v-if="currentPage > 3" @click="goToPage(1)" :disabled="changingPage" class="page-btn">1</button>
+          <span v-if="currentPage > 4" class="pagination-ellipsis">...</span>
+          
+          <!-- Show pages around current page -->
           <button 
-            @click="pushToScreen(asset)"
-            :disabled="pushing === asset.id"
-            class="push-btn"
+            v-for="page in getPaginationRange()" 
+            :key="page"
+            @click="goToPage(page)"
+            :disabled="changingPage"
+            :class="['page-btn', { active: page === currentPage }]"
           >
-            {{ pushing === asset.id ? '⏳' : '📺' }}
-            {{ pushing === asset.id ? 'Pushing...' : 'Push to Screen' }}
+            {{ page }}
           </button>
+          
+          <!-- Show last page if not in range -->
+          <span v-if="currentPage < totalPages - 3" class="pagination-ellipsis">...</span>
+          <button v-if="currentPage < totalPages - 2 && totalPages > 5" @click="goToPage(totalPages)" :disabled="changingPage" class="page-btn">{{ totalPages }}</button>
         </div>
-        <div class="thumbnail-info">
-          <span class="asset-name">{{ asset.friendly_name || 'Unnamed' }}</span>
-        </div>
+        
+        <button 
+          @click="nextPage"
+          :disabled="currentPage === totalPages || changingPage"
+          class="pagination-btn"
+          title="Next page"
+        >
+          →
+        </button>
+        
+        <span class="pagination-summary">
+          {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, imageAssets.length) }} 
+          of {{ imageAssets.length }}
+          <span v-if="changingPage" class="changing-indicator">...</span>
+        </span>
       </div>
     </div>
 
@@ -65,6 +115,39 @@
       <p>No scene images available</p>
       <p class="empty-hint">Upload some scene assets to get started</p>
     </div>
+
+    <!-- Preview Modal -->
+    <Teleport to="body">
+      <div 
+        v-if="previewAsset" 
+        class="gallery-modal-backdrop"
+        @click="closePreview"
+      >
+        <div class="gallery-modal-container" @click.stop>
+          <div class="gallery-modal-header">
+            <h3>{{ previewAsset.friendly_name || 'Asset Preview' }}</h3>
+            <button @click="closePreview" class="gallery-modal-close">×</button>
+          </div>
+          <div class="gallery-modal-content">
+            <img 
+              v-if="previewAsset.public_url"
+              :src="previewAsset.public_url"
+              :alt="previewAsset.friendly_name || 'Asset preview'"
+              class="gallery-modal-image"
+            />
+          </div>
+          <div class="gallery-modal-footer">
+            <button 
+              @click="pushToScreen(previewAsset); closePreview()"
+              :disabled="pushing === previewAsset.id"
+              class="gallery-push-btn"
+            >
+              {{ pushing === previewAsset.id ? 'Pushing...' : 'Push to Player Screen' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -72,6 +155,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '../plugins/supabase'
 import { useAssetStore, type Asset } from '../stores/asset'
+import AssetPreview from './AssetPreview.vue'
 
 interface Props {
   sessionId: string
@@ -89,6 +173,10 @@ const assetStore = useAssetStore()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const pushing = ref<string | null>(null)
+const previewAsset = ref<Asset | null>(null)
+const currentPage = ref(1)
+const itemsPerPage = ref(12) // Increased to better utilize full width
+const changingPage = ref(false)
 
 // Computed properties
 const imageAssets = computed(() => {
@@ -98,10 +186,83 @@ const imageAssets = computed(() => {
   )
 })
 
+const totalPages = computed(() => 
+  Math.ceil(imageAssets.value.length / itemsPerPage.value)
+)
+
+const paginatedAssets = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage.value
+  const endIndex = startIndex + itemsPerPage.value
+  return imageAssets.value.slice(startIndex, endIndex)
+})
+
+const showPagination = computed(() => totalPages.value > 1)
+
 // Methods
+function openPreview(asset: Asset) {
+  previewAsset.value = asset
+}
+
+function closePreview() {
+  previewAsset.value = null
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    changingPage.value = true
+    setTimeout(() => {
+      currentPage.value++
+      changingPage.value = false
+    }, 150)
+  }
+}
+
+function prevPage() {
+  if (currentPage.value > 1) {
+    changingPage.value = true
+    setTimeout(() => {
+      currentPage.value--
+      changingPage.value = false
+    }, 150)
+  }
+}
+
+function goToPage(page: number) {
+  if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+    changingPage.value = true
+    setTimeout(() => {
+      currentPage.value = page
+      changingPage.value = false
+    }, 150)
+  }
+}
+
+function getPaginationRange() {
+  const range = []
+  const start = Math.max(1, currentPage.value - 2)
+  const end = Math.min(totalPages.value, currentPage.value + 2)
+  
+  for (let i = start; i <= end; i++) {
+    range.push(i)
+  }
+  
+  return range
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && previewAsset.value) {
+    closePreview()
+  } else if (event.key === 'ArrowLeft' && currentPage.value > 1) {
+    prevPage()
+  } else if (event.key === 'ArrowRight' && currentPage.value < totalPages.value) {
+    nextPage()
+  }
+}
+
 async function refreshAssets() {
   loading.value = true
   error.value = null
+  currentPage.value = 1 // Reset pagination
   try {
     await assetStore.fetchAssets()
   } catch (err) {
@@ -145,10 +306,14 @@ onMounted(async () => {
     await refreshAssets()
   }
 
+  // Add ESC key listener
+  document.addEventListener('keydown', handleKeydown)
+
   // Subscribe to asset changes
   const unsubscribe = assetStore.subscribeToChanges()
   onUnmounted(() => {
     unsubscribe()
+    document.removeEventListener('keydown', handleKeydown)
   })
 })
 </script>
@@ -160,6 +325,11 @@ onMounted(async () => {
   border-radius: 0.5rem;
   padding: 0.75rem;
   margin: 0.5rem 0;
+  height: 100%;
+  max-height: 45vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .gallery-header {
@@ -167,6 +337,8 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
+  width: 100%;
+  flex-shrink: 0;
 }
 
 .gallery-header h4 {
@@ -250,12 +422,31 @@ onMounted(async () => {
 }
 
 /* Asset Grid */
+.asset-grid-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
 .asset-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 0.75rem;
-  max-height: 300px;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.5rem;
+  flex: 1;
   overflow-y: auto;
+  min-height: 0;
+  padding-bottom: 0.5rem;
+  width: 100%;
+}
+
+.asset-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .asset-thumbnail {
@@ -275,7 +466,89 @@ onMounted(async () => {
 
 .asset-thumbnail.active {
   border-color: #10b981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 0.5rem 0.5rem;
+  margin: 0 -0.75rem -0.75rem -0.75rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.pagination-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.page-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.625rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  min-width: 2rem;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.page-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-color: #2563eb;
+  font-weight: 600;
+}
+
+.pagination-ellipsis {
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0 0.5rem;
+}
+
+.pagination-summary {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: 0.5rem;
+}
+
+.changing-indicator {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
 }
 
 .thumbnail-image {
@@ -312,31 +585,65 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
+  z-index: 5;
 }
 
 .asset-thumbnail:hover .thumbnail-overlay {
   opacity: 1;
 }
 
+.overlay-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.preview-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-btn:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: scale(1.1);
+}
+
 .push-btn {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   border: none;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  transition: all 0.2s;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .push-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 .push-btn:disabled {
@@ -345,36 +652,198 @@ onMounted(async () => {
   transform: none;
 }
 
-.thumbnail-info {
-  position: absolute;
-  bottom: 0;
+/* Gallery Modal Styles */
+.gallery-modal-backdrop {
+  position: fixed;
+  top: 0;
   left: 0;
-  right: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
-  padding: 0.5rem 0.25rem 0.25rem;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.gallery-modal-container {
+  background: linear-gradient(135deg, #1e293b, #334155);
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gallery-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+}
+
+.gallery-modal-header h3 {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.gallery-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.gallery-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
   color: white;
 }
 
-.asset-name {
-  font-size: 0.7rem;
-  line-height: 1.2;
-  font-weight: 500;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.gallery-modal-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-modal-image {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.gallery-modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  display: flex;
+  justify-content: center;
+}
+
+.gallery-push-btn {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  min-width: 200px;
+}
+
+.gallery-push-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.gallery-push-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
+  .gm-asset-gallery {
+    max-height: 50vh;
+  }
+
   .asset-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 0.25rem;
+  }
+
+  .asset-grid-container {
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 0.25rem;
   }
   
   .push-btn {
     font-size: 0.7rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .preview-btn {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .pagination-btn {
     padding: 0.375rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .page-btn {
+    padding: 0.25rem 0.5rem;
+    min-width: 1.75rem;
+  }
+
+  .pagination-summary {
+    flex-basis: 100%;
+    text-align: center;
+    margin: 0.5rem 0 0 0;
+  }
+
+  /* Gallery Modal Mobile */
+  .gallery-modal-container {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .gallery-modal-header,
+  .gallery-modal-content,
+  .gallery-modal-footer {
+    padding: 1rem;
+  }
+  
+  .gallery-modal-header h3 {
+    font-size: 1rem;
+  }
+  
+  .gallery-modal-image {
+    max-height: 50vh;
+  }
+
+  .gallery-push-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    min-width: 150px;
   }
 }
 </style>

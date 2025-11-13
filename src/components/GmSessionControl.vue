@@ -220,10 +220,16 @@ function handleImagePushed(assetId: string) {
   border-radius: 0.5rem;
   padding: 0.75rem;
   margin: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 60vh;
+  overflow: hidden;
 }
 
 .session-status {
   margin-bottom: 0.75rem;
+  flex-shrink: 0;
 }
 
 .session-status h3 {
