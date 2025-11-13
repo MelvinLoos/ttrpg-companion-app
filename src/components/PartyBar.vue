@@ -131,7 +131,7 @@ async function generateQRCode() {
   
   try {
     const joinUrl = `${window.location.origin}/join/${props.sessionId}`
-    const size = props.square ? 60 : 72
+    const size = props.square ? 80 : 92
     await QRCode.toCanvas(qrCodeCanvas.value, joinUrl, {
       width: size,
       margin: 0,
@@ -338,9 +338,9 @@ watch(() => props.hideQr, async (newHideQr, oldHideQr) => {
 }
 
 .party-bar.square .character-card {
-  padding: 0.15rem;
-  width: 100px;
-  height: 100px;
+  padding: 0;
+  width: 120px;
+  height: 120px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -349,8 +349,8 @@ watch(() => props.hideQr, async (newHideQr, oldHideQr) => {
 }
 
 .party-bar.square .character-portrait {
-  width: 65px;
-  height: 65px;
+  width: 90px;
+  height: 90px;
   margin: 0 auto 0.05rem;
   flex-shrink: 0;
 }
@@ -360,7 +360,7 @@ watch(() => props.hideQr, async (newHideQr, oldHideQr) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1;
+  flex: .5;
 }
 
 .party-bar.square .character-info h4 {
@@ -387,8 +387,8 @@ watch(() => props.hideQr, async (newHideQr, oldHideQr) => {
 }
 
 .party-bar.square .qr-code-container {
-  width: 65px;
-  height: 65px;
+  width: 85px;
+  height: 85px;
   margin: 0 auto 0.05rem;
   padding: 0.125rem;
 }
