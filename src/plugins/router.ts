@@ -34,6 +34,16 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/Gm/CharactersView.vue')
       },
       {
+        path: 'monsters',
+        name: 'gm-monsters',
+        component: () => import('../views/Gm/MonstersView.vue')
+      },
+      {
+        path: 'encounters',
+        name: 'gm-encounters',
+        component: () => import('../views/Gm/EncountersView.vue')
+      },
+      {
         path: 'combat',
         name: 'gm-combat',
         component: () => import('../components/CombatView.vue')

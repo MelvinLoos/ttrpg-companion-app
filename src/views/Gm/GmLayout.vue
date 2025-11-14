@@ -7,6 +7,8 @@
           <router-link :to="{ name: 'gm-lobby' }">Lobby</router-link>
           <router-link :to="{ name: 'gm-sessions' }">Sessions</router-link>
           <router-link :to="{ name: 'gm-characters' }">Characters</router-link>
+          <router-link :to="{ name: 'gm-monsters' }">Monsters</router-link>
+          <router-link :to="{ name: 'gm-encounters' }">Encounters</router-link>
           <router-link :to="{ name: 'gm-combat' }">Combat</router-link>
           <router-link :to="{ name: 'gm-assets' }">Assets</router-link>
         </nav>
