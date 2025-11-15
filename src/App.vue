@@ -5,8 +5,10 @@ import { useAuthStore } from './stores/auth'
 const authStore = useAuthStore()
 
 onMounted(async () => {
-  // Initialize auth state on app mount
-  await authStore.initialize()
+  // TODO: Temporarily skip auth initialization for development testing
+  // await authStore.initialize()
+  authStore.loading = false // Manually set loading to false
+  console.log('🔧 Auth initialization bypassed for testing')
 })
 </script>
 

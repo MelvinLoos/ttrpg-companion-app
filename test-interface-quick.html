@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Interface Test</title>
+    <style>
+        body { 
+            font-family: Arial; 
+            background: #1a1a1a; 
+            color: white; 
+            padding: 20px; 
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .info { color: #60a5fa; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Interface Quick Test</h1>
+    
+    <div class="test-section">
+        <h2>📊 Server Status Test</h2>
+        <button onclick="testVueApp()">Test Vue App</button>
+        <button onclick="testAPI()">Test API</button>
+        <div id="server-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎲 Combat Data Test</h2>
+        <button onclick="testCombatData()">Check Monster Data</button>
+        <div id="combat-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Direct Links</h2>
+        <p><a href="http://localhost:5173/gm/monsters" target="_blank" class="info">→ Monsters Page</a></p>
+        <p><a href="http://localhost:5173/gm/encounters" target="_blank" class="info">→ Encounters Page</a></p>
+        <p><a href="http://localhost:5173/" target="_blank" class="info">→ Main App</a></p>
+        <p><a href="http://localhost:5173/gm/sessions" target="_blank" class="info">→ GM Dashboard</a></p>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js'
+        
+        const supabase = createClient(
+            'http://127.0.0.1:54321',
+            'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH'
+        )
+
+        window.testVueApp = async () => {
+            const results = document.getElementById('server-results')
+            results.innerHTML = '<div class="info">Testing Vue app...</div>'
+            
+            try {
+                const response = await fetch('http://localhost:5173/')
+                if (response.ok) {
+                    results.innerHTML = '<div class="success">✅ Vue dev server is running</div>'
+                } else {
+                    results.innerHTML = '<div class="error">❌ Vue dev server returned error: ' + response.status + '</div>'
+                }
+            } catch (error) {
+                results.innerHTML = '<div class="error">❌ Cannot connect to Vue dev server: ' + error.message + '</div>'
+            }
+        }
+
+        window.testAPI = async () => {
+            const results = document.getElementById('server-results')
+            results.innerHTML += '<div class="info">Testing Supabase API...</div>'
+            
+            try {
+                const { data, error } = await supabase.from('sessions').select('count').limit(1)
+                if (error) {
+                    results.innerHTML += '<div class="error">❌ Supabase API error: ' + error.message + '</div>'
+                } else {
+                    results.innerHTML += '<div class="success">✅ Supabase API is working</div>'
+                }
+            } catch (error) {
+                results.innerHTML += '<div class="error">❌ Supabase API exception: ' + error.message + '</div>'
+            }
+        }
+
+        window.testCombatData = async () => {
+            const results = document.getElementById('combat-results')
+            results.innerHTML = '<div class="info">Testing combat data...</div>'
+            
+            try {
+                const { data: monsters, error: monstersError } = await supabase
+                    .from('monster_templates')
+                    .select('*')
+                
+                if (monstersError) {
+                    results.innerHTML = '<div class="error">❌ Monster fetch error: ' + monstersError.message + '</div>'
+                    return
+                }
+
+                const { data: encounters, error: encountersError } = await supabase
+                    .from('combat_encounters')
+                    .select('*')
+
+                if (encountersError) {
+                    results.innerHTML += '<div class="error">❌ Encounter fetch error: ' + encountersError.message + '</div>'
+                    return
+                }
+
+                results.innerHTML = `
+                    <div class="success">✅ Found ${monsters.length} monsters</div>
+                    <div class="success">✅ Found ${encounters.length} encounters</div>
+                `
+
+                if (monsters.length > 0) {
+                    results.innerHTML += '<div class="info">Monsters:</div>'
+                    monsters.forEach(m => {
+                        results.innerHTML += `<div style="margin-left: 20px;">- ${m.name} (CR ${m.challenge_rating || 'unknown'})</div>`
+                    })
+                }
+
+                if (encounters.length > 0) {
+                    results.innerHTML += '<div class="info">Encounters:</div>'
+                    encounters.forEach(e => {
+                        results.innerHTML += `<div style="margin-left: 20px;">- ${e.name}</div>`
+                    })
+                }
+
+            } catch (error) {
+                results.innerHTML = '<div class="error">❌ Combat data test failed: ' + error.message + '</div>'
+            }
+        }
+
+        // Auto-run basic tests
+        setTimeout(() => {
+            testVueApp()
+            setTimeout(() => testAPI(), 1000)
+            setTimeout(() => testCombatData(), 2000)
+        }, 500)
+    </script>
+</body>
+</html>

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combat System Interface Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-section {
+            background: #2a2a2a;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .info { color: #60a5fa; }
+        .warning { color: #fbbf24; }
+        .test-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .test-button:hover {
+            background: #2563eb;
+        }
+        .nav-button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .nav-button:hover {
+            background: #047857;
+        }
+        .test-results {
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎲 Combat System Interface Test Suite</h1>
+    <p class="info">Complete functional testing of the Feature 2 Combat Management System</p>
+
+    <div class="test-section">
+        <h2>🚀 Quick Navigation</h2>
+        <p>Direct access to working interfaces:</p>
+        <a href="http://localhost:5173/gm/monsters" target="_blank" class="nav-button">Monster Library</a>
+        <a href="http://localhost:5173/gm/encounters" target="_blank" class="nav-button">Combat Encounters</a>
+        <a href="http://localhost:5173/" target="_blank" class="nav-button">Main App</a>
+        <a href="http://localhost:5173/gm/sessions" target="_blank" class="nav-button">GM Dashboard</a>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 System Health Check</h2>
+        <button class="test-button" onclick="runHealthCheck()">Run Health Check</button>
+        <div id="health-results" class="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🐲 Monster Management Test</h2>
+        <button class="test-button" onclick="testMonsterOperations()">Test Monster CRUD</button>
+        <div id="monster-results" class="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>⚔️ Encounter Management Test</h2>
+        <button class="test-button" onclick="testEncounterOperations()">Test Encounter CRUD</button>
+        <div id="encounter-results" class="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Combat Flow Test</h2>
+        <button class="test-button" onclick="testCombatFlow()">Test Full Combat Flow</button>
+        <div id="combat-results" class="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📈 Test Summary</h2>
+        <div id="summary-results" class="test-results">
+            Click any test button above to start testing...
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js'
+        
+        const supabase = createClient(
+            'http://127.0.0.1:54321',
+            'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH'
+        )
+
+        let testResults = {
+            health: false,
+            monsters: false,
+            encounters: false,
+            combat: false
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary-results')
+            const total = Object.keys(testResults).length
+            const passed = Object.values(testResults).filter(Boolean).length
+            
+            summary.innerHTML = `
+                <div class="info">Test Progress: ${passed}/${total} tests passed</div>
+                <div class="${testResults.health ? 'success' : 'error'}">Health Check: ${testResults.health ? 'PASS' : 'PENDING'}</div>
+                <div class="${testResults.monsters ? 'success' : 'error'}">Monster Management: ${testResults.monsters ? 'PASS' : 'PENDING'}</div>
+                <div class="${testResults.encounters ? 'success' : 'error'}">Encounter Management: ${testResults.encounters ? 'PASS' : 'PENDING'}</div>
+                <div class="${testResults.combat ? 'success' : 'error'}">Combat Flow: ${testResults.combat ? 'PASS' : 'PENDING'}</div>
+            `
+        }
+
+        window.runHealthCheck = async () => {
+            const results = document.getElementById('health-results')
+            results.innerHTML = '<div class="info">🔄 Running health checks...</div>'
+            
+            try {
+                // Test Vue app
+                const vueResponse = await fetch('http://localhost:5173/')
+                const vueHealthy = vueResponse.ok
+                results.innerHTML += `<div class="${vueHealthy ? 'success' : 'error'}">${vueHealthy ? '✅' : '❌'} Vue Dev Server</div>`
+
+                // Test Supabase connection
+                const { error: dbError } = await supabase.from('sessions').select('count').limit(1)
+                const dbHealthy = !dbError
+                results.innerHTML += `<div class="${dbHealthy ? 'success' : 'error'}">${dbHealthy ? '✅' : '❌'} Supabase Database</div>`
+
+                // Test combat tables
+                const { data: monsters, error: monsterError } = await supabase.from('monster_templates').select('count').limit(1)
+                const monstersHealthy = !monsterError
+                results.innerHTML += `<div class="${monstersHealthy ? 'success' : 'error'}">${monstersHealthy ? '✅' : '❌'} Monster Templates Table</div>`
+
+                const { data: encounters, error: encounterError } = await supabase.from('combat_encounters').select('count').limit(1)
+                const encountersHealthy = !encounterError
+                results.innerHTML += `<div class="${encountersHealthy ? 'success' : 'error'}">${encountersHealthy ? '✅' : '❌'} Combat Encounters Table</div>`
+
+                // Test data counts
+                const { data: monsterCount } = await supabase.from('monster_templates').select('id')
+                const { data: encounterCount } = await supabase.from('combat_encounters').select('id')
+                results.innerHTML += `<div class="info">📊 ${monsterCount?.length || 0} monsters, ${encounterCount?.length || 0} encounters in database</div>`
+
+                const allHealthy = vueHealthy && dbHealthy && monstersHealthy && encountersHealthy
+                testResults.health = allHealthy
+                results.innerHTML += `<div class="${allHealthy ? 'success' : 'error'}">🏥 Overall Health: ${allHealthy ? 'HEALTHY' : 'ISSUES DETECTED'}</div>`
+
+            } catch (error) {
+                results.innerHTML += `<div class="error">❌ Health check failed: ${error.message}</div>`
+                testResults.health = false
+            }
+            
+            updateSummary()
+        }
+
+        window.testMonsterOperations = async () => {
+            const results = document.getElementById('monster-results')
+            results.innerHTML = '<div class="info">🔄 Testing monster operations...</div>'
+            
+            try {
+                // Test CREATE
+                const testMonster = {
+                    name: 'Test Creature ' + Date.now(),
+                    hit_points: 25,
+                    armor_class: 14,
+                    challenge_rating: '1/2',
+                    description: 'Test monster for interface validation'
+                }
+
+                const { data: created, error: createError } = await supabase
+                    .from('monster_templates')
+                    .insert([testMonster])
+                    .select()
+                    .single()
+
+                if (createError) throw createError
+                results.innerHTML += `<div class="success">✅ CREATE: Monster created successfully (ID: ${created.id})</div>`
+
+                // Test READ
+                const { data: monsters, error: readError } = await supabase
+                    .from('monster_templates')
+                    .select('*')
+                    .eq('id', created.id)
+
+                if (readError) throw readError
+                results.innerHTML += `<div class="success">✅ READ: Monster retrieved successfully</div>`
+
+                // Test UPDATE
+                const updateData = { hit_points: 30, description: 'Updated test monster' }
+                const { error: updateError } = await supabase
+                    .from('monster_templates')
+                    .update(updateData)
+                    .eq('id', created.id)
+
+                if (updateError) throw updateError
+                results.innerHTML += `<div class="success">✅ UPDATE: Monster updated successfully</div>`
+
+                // Test DELETE
+                const { error: deleteError } = await supabase
+                    .from('monster_templates')
+                    .delete()
+                    .eq('id', created.id)
+
+                if (deleteError) throw deleteError
+                results.innerHTML += `<div class="success">✅ DELETE: Monster deleted successfully</div>`
+
+                testResults.monsters = true
+                results.innerHTML += `<div class="success">🎉 All monster operations working perfectly!</div>`
+
+            } catch (error) {
+                results.innerHTML += `<div class="error">❌ Monster test failed: ${error.message}</div>`
+                testResults.monsters = false
+            }
+            
+            updateSummary()
+        }
+
+        window.testEncounterOperations = async () => {
+            const results = document.getElementById('encounter-results')
+            results.innerHTML = '<div class="info">🔄 Testing encounter operations...</div>'
+            
+            try {
+                // Test CREATE encounter
+                const testEncounter = {
+                    name: 'Test Encounter ' + Date.now(),
+                    description: 'Test encounter for interface validation'
+                }
+
+                const { data: created, error: createError } = await supabase
+                    .from('combat_encounters')
+                    .insert([testEncounter])
+                    .select()
+                    .single()
+
+                if (createError) throw createError
+                results.innerHTML += `<div class="success">✅ CREATE: Encounter created successfully (ID: ${created.id})</div>`
+
+                // Get a test monster for the encounter
+                const { data: testMonster } = await supabase
+                    .from('monster_templates')
+                    .select('*')
+                    .limit(1)
+                    .single()
+
+                if (testMonster) {
+                    // Test adding monster to encounter
+                    const { error: linkError } = await supabase
+                        .from('combat_encounter_monsters')
+                        .insert([{
+                            encounter_id: created.id,
+                            monster_template_id: testMonster.id,
+                            quantity: 2
+                        }])
+
+                    if (linkError) throw linkError
+                    results.innerHTML += `<div class="success">✅ LINK: Monster linked to encounter successfully</div>`
+                }
+
+                // Test READ encounter with monsters
+                const { data: encounterWithMonsters, error: readError } = await supabase
+                    .from('combat_encounters')
+                    .select(`
+                        *,
+                        combat_encounter_monsters (
+                            quantity,
+                            monster_templates (*)
+                        )
+                    `)
+                    .eq('id', created.id)
+                    .single()
+
+                if (readError) throw readError
+                results.innerHTML += `<div class="success">✅ READ: Encounter with monsters retrieved successfully</div>`
+
+                // Test DELETE (cascade should handle linked monsters)
+                const { error: deleteError } = await supabase
+                    .from('combat_encounters')
+                    .delete()
+                    .eq('id', created.id)
+
+                if (deleteError) throw deleteError
+                results.innerHTML += `<div class="success">✅ DELETE: Encounter deleted successfully</div>`
+
+                testResults.encounters = true
+                results.innerHTML += `<div class="success">🎉 All encounter operations working perfectly!</div>`
+
+            } catch (error) {
+                results.innerHTML += `<div class="error">❌ Encounter test failed: ${error.message}</div>`
+                testResults.encounters = false
+            }
+            
+            updateSummary()
+        }
+
+        window.testCombatFlow = async () => {
+            const results = document.getElementById('combat-results')
+            results.innerHTML = '<div class="info">🔄 Testing complete combat flow...</div>'
+            
+            try {
+                // Create test session
+                const { data: session, error: sessionError } = await supabase
+                    .from('sessions')
+                    .insert([{
+                        name: 'Test Combat Session ' + Date.now(),
+                        status: 'active'
+                    }])
+                    .select()
+                    .single()
+
+                if (sessionError) throw sessionError
+                results.innerHTML += `<div class="success">✅ Session created for combat test</div>`
+
+                // Add test characters to session
+                const { data: character, error: charError } = await supabase
+                    .from('session_characters')
+                    .insert([{
+                        session_id: session.id,
+                        name: 'Test Hero',
+                        hit_points: 25,
+                        armor_class: 16
+                    }])
+                    .select()
+                    .single()
+
+                if (charError) throw charError
+                results.innerHTML += `<div class="success">✅ Test character added to session</div>`
+
+                // Get test monster
+                const { data: monster } = await supabase
+                    .from('monster_templates')
+                    .select('*')
+                    .limit(1)
+                    .single()
+
+                if (!monster) {
+                    results.innerHTML += `<div class="warning">⚠️ No monsters available for combat test</div>`
+                    return
+                }
+
+                // Start combat
+                const { data: combat, error: combatError } = await supabase
+                    .from('active_combats')
+                    .insert([{
+                        session_id: session.id,
+                        current_round: 1,
+                        current_turn_order: 0
+                    }])
+                    .select()
+                    .single()
+
+                if (combatError) throw combatError
+                results.innerHTML += `<div class="success">✅ Combat started successfully</div>`
+
+                // Add participants
+                const participants = [
+                    {
+                        combat_id: combat.id,
+                        participant_type: 'character',
+                        participant_id: character.id,
+                        name: character.name,
+                        hit_points: character.hit_points,
+                        armor_class: character.armor_class,
+                        initiative: 15,
+                        turn_order: 0
+                    },
+                    {
+                        combat_id: combat.id,
+                        participant_type: 'monster',
+                        participant_id: monster.id,
+                        name: monster.name + ' #1',
+                        hit_points: monster.hit_points,
+                        armor_class: monster.armor_class,
+                        initiative: 10,
+                        turn_order: 1
+                    }
+                ]
+
+                const { error: participantError } = await supabase
+                    .from('combat_participants')
+                    .insert(participants)
+
+                if (participantError) throw participantError
+                results.innerHTML += `<div class="success">✅ Combat participants added</div>`
+
+                // Test damage tracking
+                const { error: damageError } = await supabase
+                    .from('combat_participants')
+                    .update({ current_hit_points: 20 })
+                    .eq('combat_id', combat.id)
+                    .eq('participant_type', 'character')
+
+                if (damageError) throw damageError
+                results.innerHTML += `<div class="success">✅ Damage tracking works</div>`
+
+                // Cleanup test data
+                await supabase.from('sessions').delete().eq('id', session.id)
+                results.innerHTML += `<div class="success">✅ Test data cleaned up</div>`
+
+                testResults.combat = true
+                results.innerHTML += `<div class="success">🎉 Complete combat flow working perfectly!</div>`
+
+            } catch (error) {
+                results.innerHTML += `<div class="error">❌ Combat flow test failed: ${error.message}</div>`
+                testResults.combat = false
+            }
+            
+            updateSummary()
+        }
+
+        // Initialize summary
+        updateSummary()
+    </script>
+</body>
+</html>
