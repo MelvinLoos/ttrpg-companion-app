@@ -76,7 +76,7 @@ export const useCombatStore = defineStore('combat', () => {
   const fetchMonsters = async () => {
     try {
       isLoading.value = true
-      const { data, error: fetchError } = await (supabase as any)
+      const { data, error: fetchError } = await supabase
         .from('monster_templates')
         .select('*')
         .order('name')
@@ -92,7 +92,7 @@ export const useCombatStore = defineStore('combat', () => {
 
   const createMonster = async (monster: Omit<MonsterTemplate, 'id' | 'created_at'>) => {
     try {
-      const { data, error: createError } = await (supabase as any)
+      const { data, error: createError } = await supabase
         .from('monster_templates')
         .insert([monster])
         .select()
@@ -109,7 +109,7 @@ export const useCombatStore = defineStore('combat', () => {
 
   const updateMonster = async (id: string, updates: Partial<MonsterTemplate>) => {
     try {
-      const { data, error: updateError } = await (supabase as any)
+      const { data, error: updateError } = await supabase
         .from('monster_templates')
         .update(updates)
         .eq('id', id)
@@ -131,7 +131,7 @@ export const useCombatStore = defineStore('combat', () => {
 
   const deleteMonster = async (id: string) => {
     try {
-      const { error: deleteError } = await (supabase as any)
+      const { error: deleteError } = await supabase
         .from('monster_templates')
         .delete()
         .eq('id', id)
@@ -148,7 +148,7 @@ export const useCombatStore = defineStore('combat', () => {
   const fetchEncounters = async () => {
     try {
       isLoading.value = true
-      const { data, error: fetchError } = await (supabase as any)
+      const { data, error: fetchError } = await supabase
         .from('combat_encounters')
         .select(`
           *,
@@ -170,7 +170,7 @@ export const useCombatStore = defineStore('combat', () => {
 
   const createEncounter = async (encounter: Omit<CombatEncounter, 'id' | 'created_at'>) => {
     try {
-      const { data, error: createError } = await (supabase as any)
+      const { data, error: createError } = await supabase
         .from('combat_encounters')
         .insert([encounter])
         .select()
@@ -192,7 +192,7 @@ export const useCombatStore = defineStore('combat', () => {
 
   const addMonsterToEncounter = async (encounterId: string, monsterTemplateId: string, quantity: number = 1) => {
     try {
-      const { data, error: addError } = await (supabase as any)
+      const { data, error: addError } = await supabase
         .from('combat_encounter_monsters')
         .insert([{
           encounter_id: encounterId,
@@ -223,7 +223,7 @@ export const useCombatStore = defineStore('combat', () => {
       isLoading.value = true
       
       // Create active combat
-      const { data: combat, error: combatError } = await (supabase as any)
+      const { data: combat, error: combatError } = await supabase
         .from('active_combats')
         .insert([{
           session_id: sessionId,
@@ -245,7 +245,7 @@ export const useCombatStore = defineStore('combat', () => {
       if (charactersError) throw charactersError
       
       // Get encounter monsters
-      const { data: encounterMonsters, error: monstersError } = await (supabase as any)
+      const { data: encounterMonsters, error: monstersError } = await supabase
         .from('combat_encounter_monsters')
         .select(`
           *,
@@ -288,7 +288,7 @@ export const useCombatStore = defineStore('combat', () => {
         }
       })
       
-      const { data: newParticipants, error: participantsError } = await (supabase as any)
+      const { data: newParticipants, error: participantsError } = await supabase
         .from('combat_participants')
         .insert(participantsToCreate)
         .select(`
@@ -313,7 +313,7 @@ export const useCombatStore = defineStore('combat', () => {
     if (!activeCombat.value) return
     
     try {
-      const { error: endError } = await (supabase as any)
+      const { error: endError } = await supabase
         .from('active_combats')
         .update({ ended_at: new Date().toISOString() })
         .eq('id', activeCombat.value.id)
@@ -330,7 +330,7 @@ export const useCombatStore = defineStore('combat', () => {
 
   const updateParticipantInitiative = async (participantId: string, initiative: number) => {
     try {
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from('combat_participants')
         .update({ initiative })
         .eq('id', participantId)
@@ -349,7 +349,7 @@ export const useCombatStore = defineStore('combat', () => {
 
   const updateParticipantHealth = async (participantId: string, currentHitPoints: number) => {
     try {
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from('combat_participants')
         .update({ current_hit_points: currentHitPoints })
         .eq('id', participantId)
@@ -379,7 +379,7 @@ export const useCombatStore = defineStore('combat', () => {
     const roundIncrement = nextIndex === 0 ? 1 : 0
     
     try {
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from('active_combats')
         .update({ 
           current_turn_id: nextParticipant.id,
@@ -401,7 +401,7 @@ export const useCombatStore = defineStore('combat', () => {
 
   const fetchActiveCombat = async (sessionId: string) => {
     try {
-      const { data: combat, error: combatError } = await (supabase as any)
+      const { data: combat, error: combatError } = await supabase
         .from('active_combats')
         .select(`
           *,
@@ -416,7 +416,7 @@ export const useCombatStore = defineStore('combat', () => {
       activeCombat.value = combat || null
       
       if (combat) {
-        const { data: combatParticipants, error: participantsError } = await (supabase as any)
+        const { data: combatParticipants, error: participantsError } = await supabase
           .from('combat_participants')
           .select(`
             *,

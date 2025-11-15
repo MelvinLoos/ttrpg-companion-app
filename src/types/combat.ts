@@ -8,14 +8,14 @@ export interface MonsterTemplate {
   armor_class: number;
   challenge_rating: string | null;
   description: string | null;
-  created_at: string;
+  created_at: string | null;
 }
 
 export interface CombatEncounter {
   id: string;
   name: string;
   description: string | null;
-  created_at: string;
+  created_at: string | null;
 }
 
 export interface CombatEncounterMonster {
@@ -23,7 +23,7 @@ export interface CombatEncounterMonster {
   encounter_id: string;
   monster_template_id: string;
   quantity: number;
-  created_at: string;
+  created_at: string | null;
   // Joined data
   monster_template?: MonsterTemplate;
 }
@@ -34,7 +34,7 @@ export interface ActiveCombat {
   encounter_id: string | null;
   current_turn_id: string | null;
   round_number: number;
-  started_at: string;
+  started_at: string | null;
   ended_at: string | null;
   // Joined data
   encounter?: CombatEncounter;
@@ -42,7 +42,7 @@ export interface ActiveCombat {
 
 export interface CombatParticipant {
   id: string;
-  active_combat_id: string;
+  combat_id: string;
   name: string;
   initiative: number | null;
   
@@ -53,11 +53,12 @@ export interface CombatParticipant {
   monster_template_id: string | null;
   current_hit_points: number | null;
   max_hit_points: number | null;
-  monster_instance_name: string | null;
+  armor_class: number | null;
   
   // Turn tracking
   turn_order: number | null;
-  created_at: string;
+  is_active: boolean;
+  created_at: string | null;
   
   // Joined data
   monster_template?: MonsterTemplate;

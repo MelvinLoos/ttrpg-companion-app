@@ -34,6 +34,208 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_combats: {
+        Row: {
+          current_turn_id: string | null
+          encounter_id: string | null
+          ended_at: string | null
+          id: string
+          round_number: number
+          session_id: string
+          started_at: string | null
+        }
+        Insert: {
+          current_turn_id?: string | null
+          encounter_id?: string | null
+          ended_at?: string | null
+          id?: string
+          round_number?: number
+          session_id: string
+          started_at?: string | null
+        }
+        Update: {
+          current_turn_id?: string | null
+          encounter_id?: string | null
+          ended_at?: string | null
+          id?: string
+          round_number?: number
+          session_id?: string
+          started_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "active_combats_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "combat_encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "active_combats_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      combat_encounter_monsters: {
+        Row: {
+          created_at: string | null
+          encounter_id: string
+          id: string
+          monster_template_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string | null
+          encounter_id: string
+          id?: string
+          monster_template_id: string
+          quantity?: number
+        }
+        Update: {
+          created_at?: string | null
+          encounter_id?: string
+          id?: string
+          monster_template_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combat_encounter_monsters_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "combat_encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_encounter_monsters_monster_template_id_fkey"
+            columns: ["monster_template_id"]
+            isOneToOne: false
+            referencedRelation: "monster_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      combat_encounters: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      combat_participants: {
+        Row: {
+          armor_class: number | null
+          character_id: string | null
+          combat_id: string
+          created_at: string | null
+          current_hit_points: number | null
+          id: string
+          initiative: number | null
+          is_active: boolean
+          max_hit_points: number | null
+          monster_template_id: string | null
+          name: string
+          turn_order: number | null
+        }
+        Insert: {
+          armor_class?: number | null
+          character_id?: string | null
+          combat_id: string
+          created_at?: string | null
+          current_hit_points?: number | null
+          id?: string
+          initiative?: number | null
+          is_active?: boolean
+          max_hit_points?: number | null
+          monster_template_id?: string | null
+          name: string
+          turn_order?: number | null
+        }
+        Update: {
+          armor_class?: number | null
+          character_id?: string | null
+          combat_id?: string
+          created_at?: string | null
+          current_hit_points?: number | null
+          id?: string
+          initiative?: number | null
+          is_active?: boolean
+          max_hit_points?: number | null
+          monster_template_id?: string | null
+          name?: string
+          turn_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combat_participants_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "session_characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_participants_combat_id_fkey"
+            columns: ["combat_id"]
+            isOneToOne: false
+            referencedRelation: "active_combats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combat_participants_monster_template_id_fkey"
+            columns: ["monster_template_id"]
+            isOneToOne: false
+            referencedRelation: "monster_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monster_templates: {
+        Row: {
+          armor_class: number
+          challenge_rating: string | null
+          created_at: string | null
+          description: string | null
+          hit_points: number
+          id: string
+          name: string
+        }
+        Insert: {
+          armor_class: number
+          challenge_rating?: string | null
+          created_at?: string | null
+          description?: string | null
+          hit_points: number
+          id?: string
+          name: string
+        }
+        Update: {
+          armor_class?: number
+          challenge_rating?: string | null
+          created_at?: string | null
+          description?: string | null
+          hit_points?: number
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       premade_characters: {
         Row: {
           created_at: string | null
