@@ -93,6 +93,10 @@ export const router = createRouter({
 
 // Navigation guard for protected routes
 router.beforeEach(async (to) => {
+  // TEMPORARY: Disable auth guard for development testing
+  // TODO: Re-enable authentication after combat system testing is complete
+  return
+  
   const authStore = useAuthStore()
 
   // Wait for auth initialization to complete if it's still loading

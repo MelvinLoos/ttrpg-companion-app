@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue Combat Interface Test</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
+      }
+    }
+    </script>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            background: #1a1a1a; 
+            color: #fff; 
+            margin: 0; 
+            padding: 20px; 
+        }
+        .monsters-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .monster-card {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 8px 0;
+        }
+        .monster-form {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin: 5px 0;
+            color: #ccc;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            border: 1px solid #555;
+            color: #fff;
+            border-radius: 4px;
+        }
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background: #357abd; }
+        button:disabled { background: #666; cursor: not-allowed; }
+        .loading { color: #888; }
+        .error { color: #f44; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="monsters-container">
+            <h1>Vue Combat System Test</h1>
+            
+            <!-- Monster Creation Form -->
+            <div class="monster-form">
+                <h2>Create Monster</h2>
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input v-model="form.name" type="text" placeholder="Goblin" required>
+                </div>
+                <div class="form-group">
+                    <label>Hit Points:</label>
+                    <input v-model.number="form.hit_points" type="number" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Armor Class:</label>
+                    <input v-model.number="form.armor_class" type="number" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Challenge Rating:</label>
+                    <input v-model="form.challenge_rating" type="text" placeholder="1/4">
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea v-model="form.description" placeholder="Small humanoid, neutral evil"></textarea>
+                </div>
+                <button @click="createMonster" :disabled="isLoading">
+                    {{ isLoading ? 'Creating...' : 'Create Monster' }}
+                </button>
+                <button @click="loadMonsters">Refresh Monsters</button>
+            </div>
+
+            <!-- Status Messages -->
+            <div v-if="error" class="error">Error: {{ error }}</div>
+            <div v-if="isLoading" class="loading">Loading...</div>
+
+            <!-- Monsters List -->
+            <div>
+                <h2>Monsters ({{ monsters.length }})</h2>
+                <div v-if="monsters.length === 0" class="loading">
+                    No monsters yet. Create one above!
+                </div>
+                <div v-for="monster in monsters" :key="monster.id" class="monster-card">
+                    <h3>{{ monster.name }}</h3>
+                    <p><strong>HP:</strong> {{ monster.hit_points }} | <strong>AC:</strong> {{ monster.armor_class }}</p>
+                    <p v-if="monster.challenge_rating"><strong>CR:</strong> {{ monster.challenge_rating }}</p>
+                    <p v-if="monster.description">{{ monster.description }}</p>
+                    <button @click="deleteMonster(monster.id)" class="delete-btn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from '@supabase/supabase-js'
+        
+        const { createApp, ref, onMounted } = Vue
+
+        createApp({
+            setup() {
+                const supabase = createClient(
+                    'http://127.0.0.1:54321',
+                    'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH'
+                )
+
+                // State
+                const monsters = ref([])
+                const isLoading = ref(false)
+                const error = ref('')
+                const form = ref({
+                    name: '',
+                    hit_points: 1,
+                    armor_class: 10,
+                    challenge_rating: '',
+                    description: ''
+                })
+
+                // Load monsters
+                const loadMonsters = async () => {
+                    try {
+                        isLoading.value = true
+                        error.value = ''
+                        
+                        const { data, error: fetchError } = await supabase
+                            .from('monster_templates')
+                            .select('*')
+                            .order('name')
+
+                        if (fetchError) throw fetchError
+                        monsters.value = data || []
+                        console.log('Loaded monsters:', monsters.value.length)
+                    } catch (err) {
+                        error.value = err.message
+                        console.error('Load error:', err)
+                    } finally {
+                        isLoading.value = false
+                    }
+                }
+
+                // Create monster
+                const createMonster = async () => {
+                    try {
+                        isLoading.value = true
+                        error.value = ''
+
+                        if (!form.value.name) {
+                            throw new Error('Name is required')
+                        }
+
+                        const monsterData = {
+                            name: form.value.name,
+                            hit_points: form.value.hit_points,
+                            armor_class: form.value.armor_class,
+                            challenge_rating: form.value.challenge_rating || null,
+                            description: form.value.description || null
+                        }
+
+                        const { data, error: createError } = await supabase
+                            .from('monster_templates')
+                            .insert([monsterData])
+                            .select()
+                            .single()
+
+                        if (createError) throw createError
+                        
+                        monsters.value.push(data)
+                        console.log('Created monster:', data.name)
+
+                        // Reset form
+                        form.value.name = ''
+                        form.value.hit_points = 1
+                        form.value.armor_class = 10
+                        form.value.challenge_rating = ''
+                        form.value.description = ''
+                    } catch (err) {
+                        error.value = err.message
+                        console.error('Create error:', err)
+                    } finally {
+                        isLoading.value = false
+                    }
+                }
+
+                // Delete monster
+                const deleteMonster = async (id) => {
+                    try {
+                        const { error: deleteError } = await supabase
+                            .from('monster_templates')
+                            .delete()
+                            .eq('id', id)
+
+                        if (deleteError) throw deleteError
+                        
+                        monsters.value = monsters.value.filter(m => m.id !== id)
+                        console.log('Deleted monster:', id)
+                    } catch (err) {
+                        error.value = err.message
+                        console.error('Delete error:', err)
+                    }
+                }
+
+                // Load on mount
+                onMounted(() => {
+                    loadMonsters()
+                })
+
+                return {
+                    monsters,
+                    isLoading,
+                    error,
+                    form,
+                    loadMonsters,
+                    createMonster,
+                    deleteMonster
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
