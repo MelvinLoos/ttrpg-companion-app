@@ -20,6 +20,14 @@
       
       <template v-else-if="currentSession?.state === 'IN_PLAY'">
         <button 
+          v-if="!activeCombat"
+          @click="showStartCombatModal = true"
+          :disabled="loading"
+          class="start-combat-btn"
+        >
+          Start Combat
+        </button>
+        <button 
           @click="pauseSession"
           :disabled="loading"
           class="pause-btn"
@@ -52,16 +60,74 @@
       :current-image-asset-id="currentSession.current_image_asset_id"
       @image-pushed="handleImagePushed"
     />
+
+    <!-- Start Combat Modal -->
+    <div v-if="showStartCombatModal" 
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-gray-800 rounded-lg w-full max-w-md">
+        <div class="p-6">
+          <h2 class="text-xl font-bold text-white mb-4">Start Combat</h2>
+          
+          <div v-if="combatStore.encounters.length === 0" class="text-gray-400 text-center py-8">
+            <p>No encounters available.</p>
+            <p class="mt-2">Create some encounters first in the Encounters tab.</p>
+          </div>
+          
+          <div v-else class="space-y-3">
+            <p class="text-sm text-gray-300 mb-4">Select an encounter to start combat:</p>
+            <div
+              v-for="encounter in combatStore.encounters"
+              :key="encounter.id"
+              @click="selectedEncounterId = encounter.id"
+              :class="[
+                'bg-gray-700 rounded p-3 cursor-pointer border-2 transition-colors',
+                selectedEncounterId === encounter.id ? 'border-blue-500' : 'border-transparent hover:border-gray-500'
+              ]"
+            >
+              <h4 class="font-semibold text-white">{{ encounter.name }}</h4>
+              <p v-if="encounter.description" class="text-sm text-gray-300 mt-1">{{ encounter.description }}</p>
+              <div v-if="encounter.monsters && encounter.monsters.length > 0" class="text-xs text-gray-400 mt-2">
+                {{ encounter.monsters.length }} monster type{{ encounter.monsters.length !== 1 ? 's' : '' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button
+              v-if="selectedEncounterId && combatStore.encounters.length > 0"
+              @click="startCombat"
+              :disabled="startingCombat"
+              class="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              {{ startingCombat ? 'Starting...' : 'Start Combat' }}
+            </button>
+            <button
+              @click="closeStartCombatModal"
+              class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { supabase } from '../plugins/supabase'
 import type { GameSession } from '../types/session'
+import { useCombatStore } from '../stores/combat'
 import GmAssetGallery from './GmAssetGallery.vue'
 
 const loading = ref(false)
+
+// Combat related state
+const combatStore = useCombatStore()
+const showStartCombatModal = ref(false)
+const selectedEncounterId = ref<string>('')
+const startingCombat = ref(false)
 
 // Props
 interface Props {
@@ -72,6 +138,9 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   playerCount: 0
 })
+
+// Get active combat for current session
+const activeCombat = computed(() => combatStore.activeCombat)
 
 // Computed properties
 const statusText = computed(() => {
@@ -211,6 +280,38 @@ function handleImagePushed(assetId: string) {
   // The GmAssetGallery component handles the actual update to the database
   // This is just for logging/feedback in the GM interface
 }
+
+// Combat functions
+const closeStartCombatModal = () => {
+  showStartCombatModal.value = false
+  selectedEncounterId.value = ''
+}
+
+const startCombat = async () => {
+  if (!props.currentSession?.id || !selectedEncounterId.value) return
+  
+  try {
+    startingCombat.value = true
+    await combatStore.startCombat(props.currentSession.id, selectedEncounterId.value)
+    closeStartCombatModal()
+    // Optionally redirect to combat view or show combat tracker
+  } catch (error) {
+    console.error('Failed to start combat:', error)
+    alert('Failed to start combat. Please try again.')
+  } finally {
+    startingCombat.value = false
+  }
+}
+
+// Load encounters when component mounts or session changes
+watch(() => props.currentSession?.id, async (sessionId) => {
+  if (sessionId) {
+    await Promise.all([
+      combatStore.fetchEncounters(),
+      combatStore.fetchActiveCombat(sessionId)
+    ])
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>
@@ -346,6 +447,16 @@ function handleImagePushed(assetId: string) {
 
 .resume-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-1px);
+}
+
+.start-combat-btn {
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  color: white;
+}
+
+.start-combat-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #991b1b, #7f1d1d);
   transform: translateY(-1px);
 }
 
