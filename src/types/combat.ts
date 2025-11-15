@@ -37,7 +37,7 @@ export interface ActiveCombat {
   started_at: string | null;
   ended_at: string | null;
   // Joined data
-  encounter?: CombatEncounter;
+  encounter?: CombatEncounter | null;
 }
 
 export interface CombatParticipant {
@@ -78,15 +78,16 @@ export interface CombatParticipantWithType extends CombatParticipant {
 }
 
 export interface CreateCombatParticipantData {
-  active_combat_id: string;
+  combat_id: string;
   name: string;
   initiative?: number;
   character_id?: string;
   monster_template_id?: string;
   current_hit_points?: number;
   max_hit_points?: number;
-  monster_instance_name?: string;
+  armor_class?: number;
   turn_order?: number;
+  is_active?: boolean;
 }
 
 export interface CombatEncounterWithMonsters extends CombatEncounter {

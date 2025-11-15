@@ -14,16 +14,16 @@ export interface GameSession {
 
 export interface SessionCharacter {
   id: string
-  session_id: string
+  session_id: string | null
   name: string
   portrait_url: string | null
-  is_premade: boolean
-  character_type: 'player' | 'npc' | 'monster'
-  initiative_modifier: number
+  is_premade: boolean | null
+  character_type: string | null
+  initiative_modifier: number | null
   initiative_roll: number | null
-  hand_raised: boolean
-  created_at: string
-  updated_at: string
+  hand_raised: boolean | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface SessionAsset {

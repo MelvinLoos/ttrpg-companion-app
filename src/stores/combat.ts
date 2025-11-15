@@ -375,6 +375,8 @@ export const useCombatStore = defineStore('combat', () => {
     const nextIndex = currentIndex + 1 >= sortedParticipants.value.length ? 0 : currentIndex + 1
     const nextParticipant = sortedParticipants.value[nextIndex]
     
+    if (!nextParticipant) return
+    
     // If we're going back to the first participant, increment round
     const roundIncrement = nextIndex === 0 ? 1 : 0
     
