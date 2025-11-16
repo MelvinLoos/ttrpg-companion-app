@@ -10,7 +10,7 @@
             v-model="selectedSessionId" 
             @change="handleSessionChange"
           >
-            <option value="">Select a session...</option>
+              <!-- Removed 'Select a session...' option -->
             <option value="none">No Session</option>
             <option 
               v-for="session in sessionStore.activeSessions" 
@@ -137,6 +137,7 @@ import GmSessionControl from './GmSessionControl.vue'
 
 const sessionStore = useSessionStore()
 const selectedSessionId = ref<string>('')
+
 const characterSubscription = ref<(() => void) | null>(null)
 const localCharacters = ref<SessionCharacter[]>([])
 
@@ -306,23 +307,36 @@ function openPlayerScreen() {
 
 async function kickPlayer(playerId: string) {
   if (!currentSession.value) return
-  
   const player = currentPlayers.value.find(p => p.id === playerId)
   if (!player) return
-
-  // Show confirmation dialog
   const confirmKick = confirm(`Are you sure you want to remove "${player.name}" from the session?`)
   if (!confirmKick) return
-  
   try {
+    // Set current_turn_id to NULL for all combats referencing this player
+    await supabase
+      .from('active_combats')
+      .update({ current_turn_id: null })
+      .eq('session_id', currentSession.value.id)
+      .eq('current_turn_id', playerId)
+    // Delete combat_participants for this player in all combats
+    await supabase
+      .from('combat_participants')
+      .delete()
+      .eq('character_id', playerId)
+      .in('active_combat_id',
+        (await supabase
+          .from('active_combats')
+          .select('id')
+          .eq('session_id', currentSession.value.id)
+        ).data?.map(c => c.id) || []
+      )
+    // Now delete the player
     const { error } = await supabase
       .from('session_characters')
       .delete()
       .eq('id', playerId)
       .eq('session_id', currentSession.value.id)
-
     if (error) throw error
-    
     // Player removed successfully
   } catch (error) {
     console.error('Failed to kick player:', error)
@@ -362,19 +376,30 @@ async function generateQRCode() {
 let unsubscribeSession: (() => void) | null = null
 
 onMounted(async () => {
-  sessionStore.fetchSessions()
-  
-  // Set the first session as selected if none is current
-  if (sessionStore.activeSessions.length > 0 && !sessionStore.state.currentSession) {
-    const firstSession = sessionStore.activeSessions[0]
-    if (firstSession) {
-      selectedSessionId.value = firstSession.id
-      handleSessionChange()
+  await sessionStore.fetchSessions()
+
+  // Restore selected session from localStorage if available
+  const savedSessionId = localStorage.getItem('activeSessionId')
+  if (savedSessionId && sessionStore.state.sessions.length > 0 && savedSessionId !== '') {
+    selectedSessionId.value = savedSessionId
+    await handleSessionChange()
+    if (currentSession.value) {
+      await loadCharacters()
+      subscribeToCharacterChanges()
     }
-  } else if (sessionStore.state.currentSession) {
+  } else if (sessionStore.state.currentSession?.id) {
     selectedSessionId.value = sessionStore.state.currentSession.id
+    await handleSessionChange()
+    if (currentSession.value) {
+      await loadCharacters()
+      subscribeToCharacterChanges()
+    }
+  } else {
+    // If no active session, default to 'No Session'
+    selectedSessionId.value = 'none'
+    await handleSessionChange()
   }
-  
+
   // Generate initial QR code if we have a session
   await nextTick()
   if (joinUrl.value) {
@@ -393,6 +418,11 @@ onUnmounted(() => {
   if (characterSubscription.value) {
     characterSubscription.value()
   }
+})
+
+// Persist selection to localStorage
+watch(selectedSessionId, (newId) => {
+  localStorage.setItem('activeSessionId', newId || '')
 })
 </script>
 
