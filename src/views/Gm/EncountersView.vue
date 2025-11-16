@@ -497,7 +497,7 @@ const toggleEncounterMenu = (encounterId: string) => {
 const closeMenu = () => {
   openMenuId.value = null
 }
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useCombatStore } from '../../stores/combat'
 import type { CombatEncounterMonster, CombatEncounterWithMonsters, MonsterTemplate } from '../../types/combat'
 
@@ -515,6 +515,10 @@ const selectedMonster = ref<MonsterTemplate | null>(null)
 const monsterQuantity = ref(1)
 
 // Search and filter state
+function clearFilters() {
+  searchQuery.value = '';
+  difficultyFilter.value = '';
+}
 const searchQuery = ref('')
 const difficultyFilter = ref('')
 

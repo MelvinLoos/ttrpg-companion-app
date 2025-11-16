@@ -147,13 +147,24 @@ function editCharacter(character: PremadeCharacter) {
     name: character.name,
     portrait_url: character.portrait_url
   }
-  stats.value = character.stats_json || {
-    STR: 10,
-    DEX: 10,
-    CON: 10,
-    INT: 10,
-    WIS: 10,
-    CHA: 10
+  if (typeof character.stats_json === 'object' && character.stats_json !== null && 'STR' in character.stats_json) {
+    stats.value = {
+      STR: Number(character.stats_json.STR) ?? 10,
+      DEX: Number(character.stats_json.DEX) ?? 10,
+      CON: Number(character.stats_json.CON) ?? 10,
+      INT: Number(character.stats_json.INT) ?? 10,
+      WIS: Number(character.stats_json.WIS) ?? 10,
+      CHA: Number(character.stats_json.CHA) ?? 10
+    }
+  } else {
+    stats.value = {
+      STR: 10,
+      DEX: 10,
+      CON: 10,
+      INT: 10,
+      WIS: 10,
+      CHA: 10
+    }
   }
   showCreateDialog.value = true
 }

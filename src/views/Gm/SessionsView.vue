@@ -31,7 +31,7 @@
           <div class="session-info">
             <h3>{{ session.name }}</h3>
             <p v-if="session.teaser_text" class="teaser">{{ session.teaser_text }}</p>
-            <p class="meta">Created {{ formatDate(session.created_at) }}</p>
+            <p class="meta">Created {{ formatDate(session.created_at || '') }}</p>
           </div>
           <div class="session-actions">
             <button @click="editSession(session)" class="edit-btn">Edit</button>

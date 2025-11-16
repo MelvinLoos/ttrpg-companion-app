@@ -62,12 +62,14 @@ const characters = ref<SessionCharacter[]>([])
 const qrCodeCanvas = ref<HTMLCanvasElement | null>(null)
 
 // Methods
-function formatCharacterType(type: string): string {
+function formatCharacterType(type: string | null): string {
   switch (type) {
     case 'player': return 'Player'
     case 'npc': return 'NPC'
     case 'monster': return 'Monster'
-    default: return type
+    case null: return ''
+    case undefined: return ''
+    default: return type || ''
   }
 }
 

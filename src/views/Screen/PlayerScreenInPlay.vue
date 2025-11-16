@@ -94,6 +94,7 @@ import { useRoute } from 'vue-router'
 import type { GameSession } from '../../types/session'
 import { supabase } from '../../plugins/supabase'
 import { useCombatStore } from '../../stores/combat'
+import { mapSession } from '../../stores/session'
 import PartyBar from '../../components/PartyBar.vue'
 import PublicCombatTracker from '../../components/PublicCombatTracker.vue'
 
@@ -187,7 +188,7 @@ async function loadSessionData() {
       throw new Error('Session not found')
     }
 
-    session.value = sessionData
+  session.value = mapSession(sessionData)
 
     // Load player count
     await loadPlayerCount(sessionId)
