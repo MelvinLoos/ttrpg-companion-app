@@ -29,12 +29,12 @@
 
       <!-- Main content area -->
       <main class="in-play-main">
+        <!-- Combat tracker sidebar (when active) -->
+        <div v-if="showCombatTracker" class="combat-sidebar">
+          <PublicCombatTracker :session-id="route.params.session_id as string" />
+        </div>
         <!-- Simplified overlay containers -->
         <div class="overlay-containers">
-          <!-- Combat tracker sidebar (when active) -->
-          <div v-if="showCombatTracker" class="combat-sidebar">
-            <PublicCombatTracker :session-id="route.params.session_id as string" />
-          </div>
           
           <!-- Party members display at bottom -->
           <div class="party-section" :class="{ 'with-combat': showCombatTracker }">
@@ -572,16 +572,14 @@ onMounted(async () => {
 }
 
 .party-section.with-combat {
-  width: 65%;
+  width: 100%;
 }
 
 /* Combat sidebar */
 .combat-sidebar {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  width: 320px;
-  max-width: calc(100vw - 2rem);
+  margin-left: 30px;
+  width: 400px;
+  max-width: calc(100vw - 1rem);
   z-index: 10;
   animation: slideInRight 0.3s ease-out;
 }
@@ -600,7 +598,6 @@ onMounted(async () => {
 /* Mobile adjustments for combat sidebar */
 @media (max-width: 768px) {
   .combat-sidebar {
-    position: fixed;
     top: auto;
     bottom: 1rem;
     right: 1rem;

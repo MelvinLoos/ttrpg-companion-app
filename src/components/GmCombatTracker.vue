@@ -1,11 +1,11 @@
 <template>
-  <div class="gm-combat-tracker">
+  <div class="bg-black bg-opacity-40 border border-white border-opacity-10 rounded-xl p-6 my-4">
     <!-- Combat Header -->
-    <div class="combat-header">
-      <div class="combat-info">
+    <div class="flex justify-between items-start mb-6 border-b border-white border-opacity-10 pb-4">
+      <div class="flex-1">
         <h2 class="text-xl font-bold text-white">Combat Tracker</h2>
-        <div class="combat-meta">
-          <span v-if="combatStore.activeCombat" class="text-sm text-gray-300">
+        <div class="mt-2">
+          <span v-if="combatStore.activeCombat" class="text-sm text-gray-200">
             Round {{ combatStore.activeCombat.round_number }}
           </span>
           <span v-if="combatStore.activeCombat?.encounter" class="text-sm text-gray-400 ml-3">
@@ -13,18 +13,18 @@
           </span>
         </div>
       </div>
-      <div class="combat-actions">
+      <div class="flex gap-3">
         <button
-          @click="nextTurn"
-          :disabled="!combatStore.activeCombat || combatStore.isLoading"
-          class="next-turn-btn"
+         @click="nextTurn"
+         :disabled="!combatStore.activeCombat || combatStore.isLoading"
+         class="px-4 py-2 rounded-lg font-semibold text-sm cursor-pointer bg-linear-to-br from-green-700 to-green-900 text-white shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed hover:from-green-800 hover:to-green-950 hover:-translate-y-0.5"
         >
           Next Turn
         </button>
         <button
-          @click="endCombat"
-          :disabled="!combatStore.activeCombat || combatStore.isLoading"
-          class="end-combat-btn"
+         @click="endCombat"
+         :disabled="!combatStore.activeCombat || combatStore.isLoading"
+         class="px-4 py-2 rounded-lg font-semibold text-sm cursor-pointer bg-linear-to-br from-red-700 to-red-900 text-white shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed hover:from-red-800 hover:to-red-950 hover:-translate-y-0.5"
         >
           End Combat
         </button>
@@ -32,68 +32,55 @@
     </div>
 
     <!-- No Active Combat -->
-    <div v-if="!combatStore.activeCombat" class="no-combat">
-      <p class="text-gray-400">No active combat. Use the "Start Combat" button to begin.</p>
+    <div v-if="!combatStore.activeCombat" class="text-center py-8 text-gray-400">
+      <p>No active combat. Use the "Start Combat" button to begin.</p>
     </div>
 
     <!-- Combat Participants -->
-    <div v-else class="participants-list">
+    <div v-else class="mt-4">
       <h3 class="text-lg font-semibold text-white mb-4">Participants</h3>
-      
-      <div class="initiative-grid">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 items-stretch">
         <!-- Initiative Header -->
-        <div class="initiative-header">
-          <span class="text-sm font-medium text-gray-300">Initiative</span>
-          <span class="text-sm font-medium text-gray-300">Name</span>
-          <span class="text-sm font-medium text-gray-300">Type</span>
-          <span class="text-sm font-medium text-gray-300">Health</span>
-          <span class="text-sm font-medium text-gray-300">Status</span>
-        </div>
+        <span class="flex items-center justify-center h-16 py-2 border-b border-white border-opacity-10 mb-2 text-sm font-medium text-gray-300">Initiative</span>
+        <span class="flex items-center justify-center h-16 py-2 border-b border-white border-opacity-10 mb-2 text-sm font-medium text-gray-300">Name</span>
+        <span class="flex items-center justify-center h-16 py-2 border-b border-white border-opacity-10 mb-2 text-sm font-medium text-gray-300">Type</span>
+        <span class="flex items-center justify-center h-16 py-2 border-b border-white border-opacity-10 mb-2 text-sm font-medium text-gray-300">Health</span>
+        <span class="flex items-center justify-center h-16 py-2 border-b border-white border-opacity-10 mb-2 text-sm font-medium text-gray-300">Status</span>
+        <span class="flex items-center justify-center h-16 py-2 border-b border-white border-opacity-10 mb-2 text-sm font-medium text-gray-300">Remove</span>
 
         <!-- Participants -->
-        <div
-          v-for="participant in combatStore.sortedParticipants"
-          :key="participant.id"
-          :class="[
-            'participant-row',
-            { 
-              'current-turn': participant.id === combatStore.activeCombat?.current_turn_id,
-              'defeated': participant.health_status === 'Defeated'
-            }
-          ]"
-        >
+        <template v-for="participant in combatStore.sortedParticipants" :key="participant.id">
           <!-- Initiative -->
-          <div class="initiative-cell">
+          <div class="flex items-center justify-center h-16 py-3 px-2 rounded-md mb-2 bg-gray-900 bg-opacity-80 border border-white border-opacity-5 min-w-0">
             <input
               v-model.number="participant.initiative"
               @blur="updateInitiative(participant.id, participant.initiative)"
               type="number"
-              class="initiative-input"
+              class="w-full max-w-[70px] py-1 px-2 bg-black bg-opacity-40 border border-white border-opacity-20 rounded text-white text-center text-sm box-border focus:outline-none focus:border-blue-600"
               placeholder="--"
             />
           </div>
 
           <!-- Name -->
-          <div class="name-cell">
-            <span class="participant-name">{{ participant.name }}</span>
-            <span v-if="participant.id === combatStore.activeCombat?.current_turn_id" 
-                  class="current-indicator">← Current</span>
+          <div class="flex items-center justify-center h-16 py-3 px-2 rounded-md mb-2 bg-gray-900 bg-opacity-80 border border-white border-opacity-5 min-w-0">
+            <span class="font-semibold text-white">{{ participant.name }}</span>
+            <span v-if="participant.id === combatStore.activeCombat?.current_turn_id" class="text-blue-400 text-xs font-medium ml-2">← Current</span>
           </div>
 
           <!-- Type -->
-          <div class="type-cell">
-            <span :class="['type-badge', participant.type]">
+          <div class="flex items-center justify-center h-16 py-3 px-2 rounded-md mb-2 bg-gray-900 bg-opacity-80 border border-white border-opacity-5 min-w-0">
+            <span :class="['px-2 py-1 rounded text-xs font-medium uppercase', participant.type === 'player' ? 'bg-green-700 bg-opacity-40 text-green-200' : 'bg-red-700 bg-opacity-40 text-red-200']">
               {{ participant.type === 'player' ? 'Player' : 'Monster' }}
             </span>
           </div>
 
           <!-- Health -->
-          <div class="health-cell">
-            <div v-if="participant.type === 'monster' && participant.current_hit_points !== null">
-              <div class="health-controls">
+          <div class="flex items-center justify-center h-16 py-3 px-2 rounded-md mb-2 bg-gray-900 bg-opacity-80 border border-white border-opacity-5 min-w-0">
+            <div v-if="participant.type === 'monster' && participant.current_hit_points !== null" class="w-full">
+              <div class="flex items-center gap-1 mb-2">
                 <button
                   @click="adjustHealth(participant, -1)"
-                  class="health-btn damage"
+                  class="w-6 h-6 rounded font-bold text-sm cursor-pointer transition bg-red-700 text-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
                   :disabled="participant.current_hit_points <= 0"
                 >
                   -
@@ -104,41 +91,50 @@
                   type="number"
                   min="0"
                   :max="participant.max_hit_points || 100"
-                  class="health-input"
+                  class="w-full max-w-[70px] py-1 bg-black bg-opacity-40 border border-white border-opacity-20 rounded text-white text-center text-xs box-border"
                 />
-                <span class="health-max">/{{ participant.max_hit_points }}</span>
+                <span class="text-gray-400 text-xs">/{{ participant.max_hit_points }}</span>
                 <button
                   @click="adjustHealth(participant, 1)"
-                  class="health-btn heal"
+                  class="w-6 h-6 rounded font-bold text-sm cursor-pointer transition bg-green-700 text-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
                   :disabled="(participant.current_hit_points || 0) >= (participant.max_hit_points || 0)"
                 >
                   +
                 </button>
               </div>
-              
               <!-- Health Bar -->
-              <div class="health-bar">
-                <div 
-                  class="health-fill"
+              <div class="h-1 bg-gray-800 bg-opacity-60 rounded overflow-hidden">
+                <div
+                  class="h-full transition-all"
                   :class="getHealthBarClass(participant.health_percentage || 0)"
                   :style="{ width: `${participant.health_percentage || 0}%` }"
                 ></div>
               </div>
             </div>
-            <span v-else class="text-gray-400">N/A</span>
+            <span v-else class="text-gray-500">N/A</span>
           </div>
 
           <!-- Status -->
-          <div class="status-cell">
-            <span 
+          <div class="flex items-center justify-center h-16 py-3 px-2 rounded-md mb-2 bg-gray-900 bg-opacity-80 border border-white border-opacity-5 min-w-0">
+            <span
               v-if="participant.health_status"
-              :class="['status-badge', getStatusClass(participant.health_status)]"
+              :class="['mr-2 px-2 py-1 rounded text-xs font-medium', getStatusClass(participant.health_status)]"
             >
               {{ participant.health_status }}
             </span>
-            <span v-else class="text-gray-400">--</span>
+            <span v-else class="text-gray-500">--</span>
           </div>
-        </div>
+          <!-- Remove -->
+          <div class="flex items-center justify-center h-16">
+            <button
+              @click="removeParticipant(participant.id)"
+              class="px-4 py-2 rounded-lg font-semibold text-sm cursor-pointer bg-red-700 text-white shadow-md transition hover:bg-red-800 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Remove participant"
+            >
+              Remove
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -150,7 +146,7 @@ import type { CombatParticipantWithType } from '../types/combat'
 
 const combatStore = useCombatStore()
 
-// Actions
+// Advance turn
 const nextTurn = async () => {
   try {
     await combatStore.nextTurn()
@@ -159,9 +155,9 @@ const nextTurn = async () => {
   }
 }
 
+// End combat
 const endCombat = async () => {
   if (!confirm('Are you sure you want to end combat?')) return
-  
   try {
     await combatStore.endCombat()
   } catch (error) {
@@ -169,335 +165,56 @@ const endCombat = async () => {
   }
 }
 
+// Update initiative
 const updateInitiative = async (participantId: string, initiative: number | null) => {
-  if (initiative === null || initiative === undefined) return
-  
-  try {
+  if (participantId && initiative !== null) {
     await combatStore.updateParticipantInitiative(participantId, initiative)
-  } catch (error) {
-    console.error('Failed to update initiative:', error)
   }
 }
 
+// Update health
 const updateHealth = async (participantId: string, currentHitPoints: number | null) => {
-  if (currentHitPoints === null || currentHitPoints === undefined) return
-  
-  try {
-    await combatStore.updateParticipantHealth(participantId, Math.max(0, currentHitPoints))
-  } catch (error) {
-    console.error('Failed to update health:', error)
+  if (participantId && currentHitPoints !== null) {
+    await combatStore.updateParticipantHealth(participantId, currentHitPoints)
   }
 }
 
-const adjustHealth = async (participant: CombatParticipantWithType, adjustment: number) => {
-  if (participant.current_hit_points === null) return
-  
-  const newHealth = Math.max(0, Math.min(
-    participant.max_hit_points || 100,
-    participant.current_hit_points + adjustment
-  ))
-  
-  await updateHealth(participant.id, newHealth)
+// Adjust health +/-
+function adjustHealth(participant: CombatParticipantWithType, delta: number) {
+  if (participant && typeof participant.current_hit_points === 'number') {
+    const newHp = Math.max(0, (participant.current_hit_points || 0) + delta)
+    updateHealth(participant.id, newHp)
+  }
 }
 
-// Helper functions
-const getHealthBarClass = (percentage: number) => {
-  if (percentage <= 0) return 'health-defeated'
-  if (percentage <= 25) return 'health-critical'
-  if (percentage <= 50) return 'health-bloodied'
-  if (percentage <= 75) return 'health-injured'
-  return 'health-healthy'
+// Remove participant
+function removeParticipant(participantId: string) {
+  if (participantId) {
+    combatStore.removeParticipant(participantId)
+  }
 }
 
-const getStatusClass = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'defeated': return 'status-defeated'
-    case 'near death': return 'status-critical'
-    case 'bloodied': return 'status-bloodied'
-    case 'injured': return 'status-injured'
-    default: return 'status-healthy'
+// Health bar color
+function getHealthBarClass(percentage: number) {
+  if (percentage >= 75) return 'bg-green-500';
+  if (percentage >= 40) return 'bg-yellow-500';
+  if (percentage > 0) return 'bg-red-700';
+  return 'bg-gray-700';
+}
+
+// Status color
+function getStatusClass(status: string) {
+  switch (status) {
+    case 'Unharmed': return 'bg-green-800 text-green-100';
+    case 'Injured': return 'bg-yellow-700 text-yellow-100';
+    case 'Bloodied': return 'bg-red-800 text-red-100';
+    case 'Near Death': return 'bg-red-950 text-red-100';
+    case 'Defeated': return 'bg-gray-800 text-gray-300';
+    default: return 'bg-gray-900 text-gray-200';
   }
 }
 </script>
 
 <style scoped>
-.gm-combat-tracker {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin: 1rem 0;
-}
-
-.combat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 1rem;
-}
-
-.combat-info {
-  flex: 1;
-}
-
-.combat-meta {
-  margin-top: 0.5rem;
-}
-
-.combat-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.next-turn-btn, .end-combat-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.next-turn-btn {
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  color: white;
-}
-
-.next-turn-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #15803d, #166534);
-  transform: translateY(-1px);
-}
-
-.end-combat-btn {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  color: white;
-}
-
-.end-combat-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #b91c1c, #991b1b);
-  transform: translateY(-1px);
-}
-
-.next-turn-btn:disabled, .end-combat-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.no-combat {
-  text-align: center;
-  padding: 2rem;
-}
-
-.participants-list {
-  margin-top: 1rem;
-}
-
-.initiative-grid {
-  display: grid;
-  grid-template-columns: 80px 1fr 100px 140px 120px;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.initiative-header {
-  display: contents;
-}
-
-.initiative-header > span {
-  padding: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 0.5rem;
-}
-
-.participant-row {
-  display: contents;
-}
-
-.participant-row.current-turn .initiative-cell,
-.participant-row.current-turn .name-cell,
-.participant-row.current-turn .type-cell,
-.participant-row.current-turn .health-cell,
-.participant-row.current-turn .status-cell {
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.participant-row.defeated {
-  opacity: 0.6;
-}
-
-.initiative-cell, .name-cell, .type-cell, .health-cell, .status-cell {
-  padding: 0.75rem 0.5rem;
-  border-radius: 0.375rem;
-  margin-bottom: 0.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.initiative-input {
-  width: 60px;
-  padding: 0.25rem 0.5rem;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.25rem;
-  color: white;
-  text-align: center;
-  font-size: 0.875rem;
-}
-
-.initiative-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-}
-
-.participant-name {
-  font-weight: 600;
-  color: white;
-}
-
-.current-indicator {
-  color: #3b82f6;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-left: 0.5rem;
-}
-
-.type-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.type-badge.player {
-  background: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-}
-
-.type-badge.monster {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-}
-
-.health-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.health-btn {
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 0.25rem;
-  font-weight: bold;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.health-btn.damage {
-  background: #dc2626;
-  color: white;
-}
-
-.health-btn.heal {
-  background: #16a34a;
-  color: white;
-}
-
-.health-btn:hover:not(:disabled) {
-  transform: scale(1.1);
-}
-
-.health-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.health-input {
-  width: 50px;
-  padding: 0.25rem;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.25rem;
-  color: white;
-  text-align: center;
-  font-size: 0.75rem;
-}
-
-.health-max {
-  color: #9ca3af;
-  font-size: 0.75rem;
-}
-
-.health-bar {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.health-fill {
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.health-fill.health-healthy {
-  background: #16a34a;
-}
-
-.health-fill.health-injured {
-  background: #eab308;
-}
-
-.health-fill.health-bloodied {
-  background: #f97316;
-}
-
-.health-fill.health-critical {
-  background: #dc2626;
-}
-
-.health-fill.health-defeated {
-  background: #6b7280;
-}
-
-.status-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.status-badge.status-healthy {
-  background: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-}
-
-.status-badge.status-injured {
-  background: rgba(234, 179, 8, 0.2);
-  color: #facc15;
-}
-
-.status-badge.status-bloodied {
-  background: rgba(249, 115, 22, 0.2);
-  color: #fb923c;
-}
-
-.status-badge.status-critical {
-  background: rgba(220, 38, 38, 0.2);
-  color: #f87171;
-}
-
-.status-badge.status-defeated {
-  background: rgba(107, 114, 128, 0.2);
-  color: #9ca3af;
-}
+/* Add any component-specific styles here */
 </style>
