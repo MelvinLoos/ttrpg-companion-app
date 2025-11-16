@@ -87,7 +87,6 @@ async function handleSignOut() {
   padding: 0.5rem;
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 1rem;
 }
 
 header {

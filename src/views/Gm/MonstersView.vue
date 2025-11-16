@@ -98,7 +98,7 @@
       </div>
 
       <!-- Monsters grid with improved layout -->
-      <div v-else-if="filteredMonsters.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div v-else-if="filteredMonsters.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4 max-h-170 overflow-y-auto">
         <div
           v-for="monster in filteredMonsters"
           :key="monster.id"
@@ -603,5 +603,11 @@ watch([searchQuery, selectedCR], () => {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem !important;
   background-color: #18181b !important;
+}
+
+.monster-view {
+  min-height: 90vh;
+  height: 90vh;
+  overflow-y: auto;
 }
 </style>
