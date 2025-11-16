@@ -1,11 +1,10 @@
 <template>
-  <div class="monsters-view min-h-screen bg-gray-900">
-    <!-- Header with better spacing and search -->
-    <div class="bg-gray-800 border-b border-gray-700 p-6">
+  <div class="monsters-view min-h-screen">
+    <header class="encounter-header bg-stone-900 text-stone-100 border-b p-6">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 class="text-3xl font-bold text-white">Monster Library</h1>
-          <p class="text-gray-400 mt-1">Manage your collection of monsters for encounters</p>
+          <p class="text-stone-400 mt-1">Manage your collection of monsters for encounters</p>
         </div>
         
         <div class="flex flex-col sm:flex-row gap-3">
@@ -15,9 +14,9 @@
               v-model="searchQuery"
               type="text"
               placeholder="Search monsters..."
-              class="w-64 pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              class="w-64 pl-10 pr-4 py-2 bg-stone-700 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             />
-            <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="absolute left-3 top-2.5 h-5 w-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
@@ -25,7 +24,7 @@
           <!-- Challenge Rating filter -->
           <select
             v-model="selectedCR"
-            class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            class="px-4 py-2 bg-stone-700 border border-stone-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
           >
             <option value="">All Challenge Ratings</option>
             <option value="0">CR 0</option>
@@ -45,7 +44,7 @@
           <!-- Add Monster button -->
           <button
             @click="showCreateModal = true"
-            class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 shadow-lg"
+            class="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 shadow-lg"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -54,31 +53,31 @@
           </button>
         </div>
       </div>
-    </div>
+    </header>
 
     <div class="p-6">
       <!-- Stats summary -->
       <div v-if="!combatStore.isLoading && !combatStore.error" class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="bg-stone-800 rounded-lg p-4 border border-stone-700">
           <div class="text-2xl font-bold text-white">{{ filteredMonsters.length }}</div>
-          <div class="text-gray-400 text-sm">Total Monsters</div>
+          <div class="text-stone-400 text-sm">Total Monsters</div>
         </div>
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="bg-stone-800 rounded-lg p-4 border border-stone-700">
           <div class="text-2xl font-bold text-green-400">{{ lowCRCount }}</div>
-          <div class="text-gray-400 text-sm">Low CR (0-1)</div>
+          <div class="text-stone-400 text-sm">Low CR (0-1)</div>
         </div>
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="bg-stone-800 rounded-lg p-4 border border-stone-700">
           <div class="text-2xl font-bold text-yellow-400">{{ medCRCount }}</div>
-          <div class="text-gray-400 text-sm">Medium CR (2-10)</div>
+          <div class="text-stone-400 text-sm">Medium CR (2-10)</div>
         </div>
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="bg-stone-800 rounded-lg p-4 border border-stone-700">
           <div class="text-2xl font-bold text-red-400">{{ highCRCount }}</div>
-          <div class="text-gray-400 text-sm">High CR (10+)</div>
+          <div class="text-stone-400 text-sm">High CR (10+)</div>
         </div>
       </div>
 
       <!-- Loading state -->
-      <div v-if="combatStore.isLoading" class="text-center text-gray-300 py-16">
+      <div v-if="combatStore.isLoading" class="text-center text-stone-300 py-16">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
         <p class="text-lg">Loading your monster collection...</p>
       </div>
@@ -103,7 +102,7 @@
         <div
           v-for="monster in filteredMonsters"
           :key="monster.id"
-          class="bg-gray-800 rounded-xl border border-gray-700 hover:border-blue-500 hover:shadow-xl transition-all duration-200 overflow-hidden group relative"
+          class="bg-stone-800 rounded-xl border border-stone-700 hover:border-blue-500 hover:shadow-xl transition-all duration-200 overflow-hidden group relative"
         >
           <!-- Monster header with better typography -->
           <div class="p-6 pb-4">
@@ -133,11 +132,11 @@
                   Actions
                 </button>
                 <div v-if="openMenuId === monster.id" 
-                  class="absolute right-0 mt-2 w-48 bg-gray-700 rounded-lg shadow-xl border border-blue-500 z-50"
+                  class="absolute right-0 mt-2 w-48 bg-stone-700 rounded-lg shadow-xl border border-blue-500 z-50"
                 >
                   <button
                     @click="editMonster(monster); closeMenu()"
-                    class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-600 transition-colors"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-left text-stone-300 hover:text-white hover:bg-stone-600 transition-colors"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -146,17 +145,17 @@
                   </button>
                   <button
                     @click="duplicateMonster(monster); closeMenu()"
-                    class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-600 transition-colors"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-left text-stone-300 hover:text-white hover:bg-stone-600 transition-colors"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                     Duplicate
                   </button>
-                  <hr class="border-gray-600 my-1">
+                  <hr class="border-stone-600 my-1">
                   <button
                     @click="deleteMonster(monster.id); closeMenu()"
-                    class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:text-red-300 hover:bg-gray-600 transition-colors"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:text-red-300 hover:bg-stone-600 transition-colors"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -169,32 +168,32 @@
 
             <!-- Monster stats with better visual hierarchy -->
             <div class="grid grid-cols-3 gap-4 mb-4">
-              <div class="text-center p-3 bg-gray-700 rounded-lg">
+              <div class="text-center p-3 bg-stone-700 rounded-lg">
                 <div class="text-2xl font-bold text-red-400">{{ monster.hit_points }}</div>
-                <div class="text-xs text-gray-400 uppercase tracking-wide">Hit Points</div>
+                <div class="text-xs text-stone-400 uppercase tracking-wide">Hit Points</div>
               </div>
-              <div class="text-center p-3 bg-gray-700 rounded-lg">
+              <div class="text-center p-3 bg-stone-700 rounded-lg">
                 <div class="text-2xl font-bold text-blue-400">{{ monster.armor_class }}</div>
-                <div class="text-xs text-gray-400 uppercase tracking-wide">Armor Class</div>
+                <div class="text-xs text-stone-400 uppercase tracking-wide">Armor Class</div>
               </div>
-              <div class="text-center p-3 bg-gray-700 rounded-lg">
+              <div class="text-center p-3 bg-stone-700 rounded-lg">
                 <div class="text-2xl font-bold text-yellow-400">{{ monster.challenge_rating || 'N/A' }}</div>
-                <div class="text-xs text-gray-400 uppercase tracking-wide">Challenge</div>
+                <div class="text-xs text-stone-400 uppercase tracking-wide">Challenge</div>
               </div>
             </div>
 
             <!-- Monster description with proper truncation -->
-            <div v-if="monster.description" class="text-sm text-gray-300 leading-relaxed h-30">
+            <div v-if="monster.description" class="text-sm text-stone-300 leading-relaxed h-30">
               <p class="line-clamp-3">{{ monster.description }}</p>
             </div>
-            <div v-else class="text-sm text-gray-500 italic">
+            <div v-else class="text-sm text-stone-500 italic">
               No description provided
             </div>
           </div>
 
           <!-- Action bar -->
-          <div class="px-6 py-4 bg-gray-750 border-t border-gray-700 flex justify-between items-center absolute bottom-0 w-full">
-            <span class="text-xs text-gray-500">
+          <div class="px-6 py-4 bg-stone-750 border-t border-stone-700 flex justify-between items-center absolute bottom-0 w-full">
+            <span class="text-xs text-stone-500">
               Created {{ formatDate(monster.created_at) }}
             </span>
             <button
@@ -212,14 +211,14 @@
 
       <!-- Improved empty state -->
       <div v-else-if="searchQuery || selectedCR" class="text-center py-16">
-        <svg class="w-16 h-16 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-16 h-16 text-stone-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        <h3 class="text-lg font-semibold text-gray-400 mb-2">No monsters found</h3>
-        <p class="text-gray-500 mb-4">Try adjusting your search or filters</p>
+        <h3 class="text-lg font-semibold text-stone-400 mb-2">No monsters found</h3>
+        <p class="text-stone-500 mb-4">Try adjusting your search or filters</p>
         <button
           @click="clearFilters"
-          class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+          class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg transition-colors"
         >
           Clear Filters
         </button>
@@ -227,12 +226,12 @@
 
       <!-- Empty state for no monsters at all -->
       <div v-else class="text-center py-16">
-        <div class="bg-gray-800 rounded-xl p-12 max-w-md mx-auto border border-gray-700">
-          <svg class="w-20 h-20 text-gray-500 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-stone-800 rounded-xl p-12 max-w-md mx-auto border border-stone-700">
+          <svg class="w-20 h-20 text-stone-500 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
           </svg>
-          <h3 class="text-xl font-semibold text-gray-400 mb-3">Your monster library is empty</h3>
-          <p class="text-gray-500 mb-6">Get started by creating your first monster template</p>
+          <h3 class="text-xl font-semibold text-stone-400 mb-3">Your monster library is empty</h3>
+          <p class="text-stone-500 mb-6">Get started by creating your first monster template</p>
           <button
             @click="showCreateModal = true"
             class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors font-medium inline-flex items-center gap-2"
@@ -249,15 +248,15 @@
     <!-- Improved Create/Edit Monster Modal -->
     <div v-if="showCreateModal || editingMonster" 
          class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div class="bg-gray-800 rounded-xl w-full max-w-lg border border-gray-700 shadow-2xl">
+      <div class="bg-stone-800 rounded-xl w-full max-w-lg border border-stone-700 shadow-2xl">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-700">
+        <div class="flex items-center justify-between p-6 border-b border-stone-700">
           <h2 class="text-2xl font-bold text-white">
             {{ editingMonster ? 'Edit Monster' : 'Create New Monster' }}
           </h2>
           <button
             @click="closeModal"
-            class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-700 transition-colors"
+            class="text-stone-400 hover:text-white p-1 rounded-lg hover:bg-stone-700 transition-colors"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -269,14 +268,14 @@
         <form @submit.prevent="saveMonster" class="p-6 space-y-6">
           <!-- Name Field -->
           <div>
-            <label class="block text-sm font-semibold text-gray-300 mb-2">
+            <label class="block text-sm font-semibold text-stone-300 mb-2">
               Monster Name *
             </label>
             <input
               v-model="monsterForm.name"
               type="text"
               required
-              class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
+              class="w-full p-3 bg-stone-700 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
               placeholder="e.g., Goblin Warrior"
             />
           </div>
@@ -284,7 +283,7 @@
           <!-- Stats Grid -->
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-semibold text-gray-300 mb-2">
+              <label class="block text-sm font-semibold text-stone-300 mb-2">
                 Hit Points *
               </label>
               <input
@@ -293,13 +292,13 @@
                 required
                 min="1"
                 max="999"
-                class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
+                class="w-full p-3 bg-stone-700 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
                 placeholder="25"
               />
             </div>
 
             <div>
-              <label class="block text-sm font-semibold text-gray-300 mb-2">
+              <label class="block text-sm font-semibold text-stone-300 mb-2">
                 Armor Class *
               </label>
               <input
@@ -308,7 +307,7 @@
                 required
                 min="1"
                 max="30"
-                class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
+                class="w-full p-3 bg-stone-700 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
                 placeholder="15"
               />
             </div>
@@ -316,12 +315,12 @@
 
           <!-- Challenge Rating with suggestions -->
           <div>
-            <label class="block text-sm font-semibold text-gray-300 mb-2">
+            <label class="block text-sm font-semibold text-stone-300 mb-2">
               Challenge Rating
             </label>
             <select
               v-model="monsterForm.challenge_rating"
-              class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
+              class="w-full p-3 bg-stone-700 border border-stone-600 rounded-lg text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
             >
               <option value="">Select Challenge Rating</option>
               <option value="0">CR 0 - Harmless creatures</option>
@@ -341,30 +340,30 @@
 
           <!-- Description -->
           <div>
-            <label class="block text-sm font-semibold text-gray-300 mb-2">
+            <label class="block text-sm font-semibold text-stone-300 mb-2">
               Description
             </label>
             <textarea
               v-model="monsterForm.description"
               rows="4"
-              class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all resize-none"
+              class="w-full p-3 bg-stone-700 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all resize-none"
               placeholder="Describe the monster's appearance, behavior, and special abilities..."
             ></textarea>
           </div>
 
           <!-- Form Actions -->
-          <div class="flex gap-4 pt-4 border-t border-gray-700">
+          <div class="flex gap-4 pt-4 border-t border-stone-700">
             <button
               type="button"
               @click="closeModal"
-              class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg transition-colors font-medium"
+              class="flex-1 bg-stone-600 hover:bg-stone-700 text-white py-3 px-4 rounded-lg transition-colors font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               :disabled="isSubmitting"
-              class="flex-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-3 px-6 rounded-lg transition-colors font-medium inline-flex items-center justify-center gap-2"
+              class="flex-2 bg-green-600 hover:bg-green-700 disabled:bg-stone-600 disabled:cursor-not-allowed text-white py-3 px-6 rounded-lg transition-colors font-medium inline-flex items-center justify-center gap-2"
             >
               <svg v-if="isSubmitting" class="animate-spin w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -459,7 +458,7 @@ const highCRCount = computed(() => {
 
 // Utility functions
 const getCRBadgeClass = (cr: string | null) => {
-  if (!cr) return 'bg-gray-600 text-gray-300'
+  if (!cr) return 'bg-stone-600 text-stone-300'
   
   const numCR = parseFloat(cr.replace('1/', '0.'))
   if (numCR >= 0 && numCR <= 1) return 'bg-green-600 text-green-100'
@@ -591,8 +590,6 @@ watch([searchQuery, selectedCR], () => {
 </script>
 
 <style scoped>
-@import "tailwindcss";
-
 .line-clamp-3 {
   overflow: hidden;
   display: -webkit-box;
@@ -601,40 +598,10 @@ watch([searchQuery, selectedCR], () => {
   line-clamp: 3;
 }
 
-.bg-gray-750 {
-  background-color: #374151;
-}
-
 .monster-library-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem !important;
   background-color: #18181b !important;
-}
-
-.bg-gray-700.rounded-lg.p-4 {
-  background-color: #23232a !important;
-  border-color: #222 !important;
-  padding: 0.75rem !important;
-}
-
-.text-lg {
-  font-size: 1rem !important;
-}
-
-.text-sm {
-  font-size: 0.85rem !important;
-}
-
-.text-xs {
-  font-size: 0.7rem !important;
-}
-
-.text-gray-300, .text-gray-400, .text-gray-500 {
-  color: #b3b3b3 !important;
-}
-
-.text-white {
-  color: #e5e5e5 !important;
 }
 </style>

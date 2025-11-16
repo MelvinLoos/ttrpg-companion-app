@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import GmLayout from '../views/Gm/GmLayout.vue'
-import LobbyView from '../components/LobbyView.vue'
+import LobbyView from '../views/Gm/LobbyView.vue'
 import ScreenLayout from '../views/Screen/ScreenLayout.vue'
 import JoinLayout from '../views/Join/JoinLayout.vue'
 import SignInView from '../views/SignInView.vue'
@@ -46,7 +46,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'combat',
         name: 'gm-combat',
-        component: () => import('../components/CombatView.vue')
+        component: () => import('../views/Gm/CombatView.vue')
       },
       {
         path: 'assets',

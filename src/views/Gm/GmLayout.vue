@@ -1,5 +1,5 @@
 <template>
-  <div class="gm-layout">
+  <div class="gm-layout bg-stone-900 text-stone-100">
     <header>
       <div class="header-left">
         <h1>GM Control Panel</h1>

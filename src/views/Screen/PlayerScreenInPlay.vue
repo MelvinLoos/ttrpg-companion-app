@@ -1,5 +1,5 @@
 <template>
-  <div class="player-screen-in-play">
+  <div class="player-screen-in-play min-h-screen bg-stone-900 text-stone-100">
     <!-- Background image display with fade transition -->
     <div class="background-container">
       <transition name="scene-fade" mode="out-in">

@@ -1,11 +1,10 @@
 <template>
-  <div class="encounters-view min-h-screen bg-gray-900">
-    <!-- Enhanced Header -->
-    <div class="bg-gray-800 border-b border-gray-700 p-6">
+  <div class="encounters-view min-h-screen">
+    <header class="encounter-header bg-stone-900 text-stone-100 border-b p-6">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 class="text-3xl font-bold text-white">Combat Encounters</h1>
-          <p class="text-gray-400 mt-1">Build and manage encounters for your sessions</p>
+          <p class="text-stone-400 mt-1">Build and manage encounters for your sessions</p>
         </div>
         
         <div class="flex flex-col sm:flex-row gap-3">
@@ -15,9 +14,9 @@
               v-model="searchQuery"
               type="text"
               placeholder="Search encounters..."
-              class="w-64 pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              class="w-64 pl-10 pr-4 py-2 bg-stone-700 border border-stone-600 rounded-lg text-stone-100 placeholder-stone-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             />
-            <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="absolute left-3 top-2.5 h-5 w-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
@@ -25,7 +24,7 @@
           <!-- Difficulty filter -->
           <select
             v-model="difficultyFilter"
-            class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            class="px-4 py-2 bg-stone-700 border border-stone-600 rounded-lg text-stone-100 focus:outline-none focus:border-blue-500"
           >
             <option value="">All Difficulties</option>
             <option value="easy">Easy (CR 0-2)</option>
@@ -37,7 +36,7 @@
           <!-- Create Encounter button -->
           <button
             @click="showCreateModal = true"
-            class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 shadow-lg"
+            class="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 shadow-lg"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -46,31 +45,31 @@
           </button>
         </div>
       </div>
-    </div>
+    </header>
 
     <div class="p-6">
       <!-- Encounter Statistics -->
       <div v-if="!combatStore.isLoading && !combatStore.error" class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="bg-stone-800 rounded-lg p-4 border border-stone-700">
           <div class="text-2xl font-bold text-white">{{ filteredEncounters.length }}</div>
-          <div class="text-gray-400 text-sm">Total Encounters</div>
+          <div class="text-stone-400 text-sm">Total Encounters</div>
         </div>
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="bg-stone-800 rounded-lg p-4 border border-stone-700">
           <div class="text-2xl font-bold text-green-400">{{ easyEncounters }}</div>
-          <div class="text-gray-400 text-sm">Easy Encounters</div>
+          <div class="text-stone-400 text-sm">Easy Encounters</div>
         </div>
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="bg-stone-800 rounded-lg p-4 border border-stone-700">
           <div class="text-2xl font-bold text-yellow-400">{{ mediumEncounters }}</div>
-          <div class="text-gray-400 text-sm">Medium/Hard</div>
+          <div class="text-stone-400 text-sm">Medium/Hard</div>
         </div>
-        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="bg-stone-800 rounded-lg p-4 border border-stone-700">
           <div class="text-2xl font-bold text-red-400">{{ deadlyEncounters }}</div>
-          <div class="text-gray-400 text-sm">Deadly/Epic</div>
+          <div class="text-stone-400 text-sm">Deadly/Epic</div>
         </div>
       </div>
 
       <!-- Loading state -->
-      <div v-if="combatStore.isLoading" class="text-center text-gray-300 py-16">
+      <div v-if="combatStore.isLoading" class="text-center text-stone-300 py-16">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
         <p class="text-lg">Loading your encounters...</p>
       </div>
@@ -95,7 +94,7 @@
         <div
           v-for="encounter in filteredEncounters"
           :key="encounter.id"
-          class="bg-gray-800 rounded-xl border border-gray-700 hover:border-blue-500 hover:shadow-xl transition-all duration-200 overflow-hidden"
+          class="bg-stone-800 rounded-xl border border-stone-700 hover:border-blue-500 hover:shadow-xl transition-all duration-200 overflow-hidden"
         >
           <!-- Encounter Header -->
           <div class="p-6 pb-4">
@@ -111,10 +110,10 @@
                   </span>
                 </div>
                 
-                <p v-if="encounter.description" class="text-gray-300 leading-relaxed line-clamp-2">
+                <p v-if="encounter.description" class="text-stone-300 leading-relaxed line-clamp-2">
                   {{ encounter.description }}
                 </p>
-                <p v-else class="text-gray-500 italic">No description provided</p>
+                <p v-else class="text-stone-500 italic">No description provided</p>
 
                 <!-- Encounter Stats -->
                 <div class="mt-4 flex flex-wrap gap-4 text-sm">
@@ -122,19 +121,19 @@
                     <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 5.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
                     </svg>
-                    <span class="text-gray-400">{{ getTotalMonsters(encounter) }} monsters</span>
+                    <span class="text-stone-400">{{ getTotalMonsters(encounter) }} monsters</span>
                   </div>
                   <div class="flex items-center gap-1">
                     <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    <span class="text-gray-400">Avg CR: {{ getAverageCR(encounter) }}</span>
+                    <span class="text-stone-400">Avg CR: {{ getAverageCR(encounter) }}</span>
                   </div>
                   <div class="flex items-center gap-1">
                     <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span class="text-gray-400">Created {{ formatDate(encounter.created_at) }}</span>
+                    <span class="text-stone-400">Created {{ formatDate(encounter.created_at) }}</span>
                   </div>
                 </div>
               </div>
@@ -164,11 +163,11 @@
                   </button>
 
                   <div v-if="openMenuId === encounter.id" 
-                    class="absolute right-0 mt-2 w-48 bg-gray-700 rounded-lg shadow-xl border border-blue-500 z-10"
+                    class="absolute right-0 mt-2 w-48 bg-stone-700 rounded-lg shadow-xl border border-blue-500 z-10"
                   >
                     <button
                       @click="addMonsterToEncounter(encounter); closeMenu()"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-600 transition-colors"
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-stone-300 hover:text-white hover:bg-stone-600 transition-colors"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -177,7 +176,7 @@
                     </button>
                     <button
                       @click="editEncounter(encounter); closeMenu()"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-600 transition-colors"
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-stone-300 hover:text-white hover:bg-stone-600 transition-colors"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -186,17 +185,17 @@
                     </button>
                     <button
                       @click="duplicateEncounter(encounter); closeMenu()"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-600 transition-colors"
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-stone-300 hover:text-white hover:bg-stone-600 transition-colors"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
                       Duplicate
                     </button>
-                    <hr class="border-gray-600 my-1">
+                    <hr class="border-stone-600 my-1">
                     <button
                       @click="deleteEncounter(encounter.id); closeMenu()"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:text-red-300 hover:bg-gray-600 transition-colors"
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:text-red-300 hover:bg-stone-600 transition-colors"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -212,7 +211,7 @@
           <!-- Monster List Section -->
           <div class="px-6 pb-6">
             <div v-if="encounter.monsters && encounter.monsters.length > 0">
-              <h4 class="text-lg font-semibold text-gray-300 mb-3 flex items-center gap-2">
+              <h4 class="text-lg font-semibold text-stone-300 mb-3 flex items-center gap-2">
                 <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 5.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
                 </svg>
@@ -222,7 +221,7 @@
                 <div
                   v-for="encounterMonster in encounter.monsters"
                   :key="encounterMonster.id"
-                  class="bg-gray-700 rounded-lg p-4 border border-gray-600 hover:border-gray-500 transition-colors"
+                  class="bg-stone-700 rounded-lg p-4 border border-stone-600 hover:border-stone-500 transition-colors"
                 >
                   <div class="flex justify-between items-start mb-2">
                     <h5 class="font-semibold text-white">
@@ -230,7 +229,7 @@
                     </h5>
                     <button
                       @click="removeMonsterFromEncounter(encounterMonster.id)"
-                      class="text-red-400 hover:text-red-300 p-1 rounded hover:bg-gray-600 transition-colors"
+                      class="text-red-400 hover:text-red-300 p-1 rounded hover:bg-stone-600 transition-colors"
                       title="Remove monster (feature coming soon)"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -244,7 +243,7 @@
                       ×{{ encounterMonster.quantity }}
                     </span>
                     
-                    <div v-if="encounterMonster.monster_template" class="text-gray-300 text-xs">
+                    <div v-if="encounterMonster.monster_template" class="text-stone-300 text-xs">
                       <div>HP: {{ encounterMonster.monster_template.hit_points }}</div>
                       <div>AC: {{ encounterMonster.monster_template.armor_class }}</div>
                       <div v-if="encounterMonster.monster_template.challenge_rating">
@@ -256,11 +255,11 @@
               </div>
             </div>
             
-            <div v-else class="bg-gray-700 rounded-lg p-8 text-center border-2 border-dashed border-gray-600">
-              <svg class="w-12 h-12 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div v-else class="bg-stone-700 rounded-lg p-8 text-center border-2 border-dashed border-stone-600">
+              <svg class="w-12 h-12 text-stone-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <p class="text-gray-400 mb-3">No monsters in this encounter yet</p>
+              <p class="text-stone-400 mb-3">No monsters in this encounter yet</p>
               <button
                 @click="addMonsterToEncounter(encounter)"
                 class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors font-medium inline-flex items-center gap-2"
@@ -277,26 +276,26 @@
 
       <!-- Empty states -->
       <div v-else-if="searchQuery || difficultyFilter" class="text-center py-16">
-        <svg class="w-16 h-16 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-16 h-16 text-stone-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        <h3 class="text-lg font-semibold text-gray-400 mb-2">No encounters match your filters</h3>
-        <p class="text-gray-500 mb-4">Try adjusting your search or difficulty filters</p>
+        <h3 class="text-lg font-semibold text-stone-400 mb-2">No encounters match your filters</h3>
+        <p class="text-stone-500 mb-4">Try adjusting your search or difficulty filters</p>
         <button
           @click="clearFilters"
-          class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+          class="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 rounded-lg transition-colors"
         >
           Clear Filters
         </button>
       </div>
 
       <div v-else class="text-center py-16">
-        <div class="bg-gray-800 rounded-xl p-12 max-w-md mx-auto border border-gray-700">
-          <svg class="w-20 h-20 text-gray-500 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-stone-800 rounded-xl p-12 max-w-md mx-auto border border-stone-700">
+          <svg class="w-20 h-20 text-stone-500 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
           </svg>
-          <h3 class="text-xl font-semibold text-gray-400 mb-3">No encounters created yet</h3>
-          <p class="text-gray-500 mb-6">Build your first encounter by combining monsters</p>
+          <h3 class="text-xl font-semibold text-stone-400 mb-3">No encounters created yet</h3>
+          <p class="text-stone-500 mb-6">Build your first encounter by combining monsters</p>
           <button
             @click="showCreateModal = true"
             class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors font-medium inline-flex items-center gap-2"
@@ -313,14 +312,14 @@
     <!-- Create/Edit Encounter Modal -->
     <div v-if="showCreateModal || editingEncounter" 
          class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div class="bg-gray-800 rounded-xl w-full max-w-lg border border-gray-700 shadow-2xl">
-        <div class="flex items-center justify-between p-6 border-b border-gray-700">
+      <div class="bg-stone-800 rounded-xl w-full max-w-lg border border-stone-700 shadow-2xl">
+        <div class="flex items-center justify-between p-6 border-b border-stone-700">
           <h2 class="text-2xl font-bold text-white">
             {{ editingEncounter ? 'Edit Encounter' : 'Create New Encounter' }}
           </h2>
           <button
             @click="closeEncounterModal"
-            class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-700 transition-colors"
+            class="text-stone-400 hover:text-white p-1 rounded-lg hover:bg-stone-700 transition-colors"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -330,38 +329,38 @@
 
         <form @submit.prevent="saveEncounter" class="p-6 space-y-6">
           <div>
-            <label class="block text-sm font-semibold text-gray-300 mb-2">Encounter Name *</label>
+            <label class="block text-sm font-semibold text-stone-300 mb-2">Encounter Name *</label>
             <input
               v-model="encounterForm.name"
               type="text"
               required
-              class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
+              class="w-full p-3 bg-stone-700 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
               placeholder="e.g., Goblin Ambush, Dragon's Lair"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-gray-300 mb-2">Description</label>
+            <label class="block text-sm font-semibold text-stone-300 mb-2">Description</label>
             <textarea
               v-model="encounterForm.description"
               rows="4"
-              class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all resize-none"
+              class="w-full p-3 bg-stone-700 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all resize-none"
               placeholder="Describe the scene, terrain, and context..."
             ></textarea>
           </div>
 
-          <div class="flex gap-4 pt-4 border-t border-gray-700">
+          <div class="flex gap-4 pt-4 border-t border-stone-700">
             <button
               type="button"
               @click="closeEncounterModal"
-              class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg transition-colors font-medium"
+              class="flex-1 bg-stone-600 hover:bg-stone-700 text-white py-3 px-4 rounded-lg transition-colors font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               :disabled="isSubmitting"
-              class="flex-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-3 px-6 rounded-lg transition-colors font-medium"
+              class="flex-2 bg-green-600 hover:bg-green-700 disabled:bg-stone-600 text-white py-3 px-6 rounded-lg transition-colors font-medium"
             >
               {{ isSubmitting ? 'Saving...' : (editingEncounter ? 'Update Encounter' : 'Create Encounter') }}
             </button>
@@ -373,14 +372,14 @@
     <!-- Add Monster to Encounter Modal -->
     <div v-if="showMonsterModal" 
          class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div class="bg-gray-800 rounded-xl w-full max-w-3xl border border-gray-700 shadow-2xl max-h-[90vh] flex flex-col">
-        <div class="flex items-center justify-between p-6 border-b border-gray-700">
+      <div class="bg-stone-800 rounded-xl w-full max-w-3xl border border-stone-700 shadow-2xl max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b border-stone-700">
           <h2 class="text-2xl font-bold text-white">
             Add Monsters to "{{ selectedEncounter?.name }}"
           </h2>
           <button
             @click="closeMonsterModal"
-            class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-700 transition-colors"
+            class="text-stone-400 hover:text-white p-1 rounded-lg hover:bg-stone-700 transition-colors"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -390,11 +389,11 @@
 
         <div class="p-6 flex-1 overflow-auto">
           <div v-if="combatStore.monsters.length === 0" class="text-center py-12">
-            <svg class="w-16 h-16 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-16 h-16 text-stone-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
             </svg>
-            <h3 class="text-lg font-semibold text-gray-400 mb-2">No monsters available</h3>
-            <p class="text-gray-500 mb-4">Create some monsters first</p>
+            <h3 class="text-lg font-semibold text-stone-400 mb-2">No monsters available</h3>
+            <p class="text-stone-500 mb-4">Create some monsters first</p>
             <router-link
               to="/gm/monsters"
               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -411,12 +410,12 @@
                 :key="monster.id"
                 @click="selectMonster(monster)"
                 :class="[
-                  'bg-gray-700 rounded-lg p-4 cursor-pointer border-2 transition-all',
-                  selectedMonster?.id === monster.id ? 'border-blue-500 ring-2 ring-blue-500 ring-opacity-50' : 'border-transparent hover:border-gray-500'
+                  'bg-stone-700 rounded-lg p-4 cursor-pointer border-2 transition-all',
+                  selectedMonster?.id === monster.id ? 'border-blue-500 ring-2 ring-blue-500 ring-opacity-50' : 'border-transparent hover:border-stone-500'
                 ]"
               >
                 <h4 class="font-semibold text-white mb-2">{{ monster.name }}</h4>
-                <div class="text-sm text-gray-300 space-y-1">
+                <div class="text-sm text-stone-300 space-y-1">
                   <div class="flex justify-between">
                     <span>HP:</span><span>{{ monster.hit_points }}</span>
                   </div>
@@ -431,18 +430,18 @@
             </div>
 
             <!-- Selected monster and quantity -->
-            <div v-if="selectedMonster" class="border-t border-gray-600 pt-4">
-              <div class="bg-gray-700 rounded-lg p-4 mb-4">
+            <div v-if="selectedMonster" class="border-t border-stone-600 pt-4">
+              <div class="bg-stone-700 rounded-lg p-4 mb-4">
                 <h4 class="text-lg font-semibold text-white mb-2">{{ selectedMonster.name }}</h4>
               </div>
               
               <div class="flex items-center gap-4">
-                <label class="text-sm font-semibold text-gray-300">Quantity:</label>
+                <label class="text-sm font-semibold text-stone-300">Quantity:</label>
                 <div class="flex items-center gap-2">
                   <button
                     type="button"
                     @click="monsterQuantity = Math.max(1, monsterQuantity - 1)"
-                    class="w-8 h-8 bg-gray-600 hover:bg-gray-500 text-white rounded-lg"
+                    class="w-8 h-8 bg-stone-600 hover:bg-stone-500 text-white rounded-lg"
                   >
                     -
                   </button>
@@ -451,12 +450,12 @@
                     type="number"
                     min="1"
                     max="20"
-                    class="w-16 p-2 bg-gray-700 border border-gray-600 rounded text-white text-center focus:outline-none focus:border-blue-500"
+                    class="w-16 p-2 bg-stone-700 border border-stone-600 rounded text-white text-center focus:outline-none focus:border-blue-500"
                   />
                   <button
                     type="button"
                     @click="monsterQuantity = Math.min(20, monsterQuantity + 1)"
-                    class="w-8 h-8 bg-gray-600 hover:bg-gray-500 text-white rounded-lg"
+                    class="w-8 h-8 bg-stone-600 hover:bg-stone-500 text-white rounded-lg"
                   >
                     +
                   </button>
@@ -466,17 +465,17 @@
           </div>
         </div>
 
-        <div v-if="selectedMonster" class="p-6 border-t border-gray-700 flex gap-4">
+        <div v-if="selectedMonster" class="p-6 border-t border-stone-700 flex gap-4">
           <button
             @click="closeMonsterModal"
-            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg transition-colors font-medium"
+            class="flex-1 bg-stone-600 hover:bg-stone-700 text-white py-3 px-4 rounded-lg transition-colors font-medium"
           >
             Cancel
           </button>
           <button
             @click="addSelectedMonster"
             :disabled="isSubmitting"
-            class="flex-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-3 px-6 rounded-lg transition-colors font-medium"
+            class="flex-2 bg-green-600 hover:bg-green-700 disabled:bg-stone-600 text-white py-3 px-6 rounded-lg transition-colors font-medium"
           >
             {{ isSubmitting ? 'Adding...' : `Add ${monsterQuantity} ${selectedMonster.name}${monsterQuantity > 1 ? 's' : ''}` }}
           </button>
@@ -721,7 +720,7 @@ const getDifficultyBadgeClass = (encounter: CombatEncounterWithMonsters) => {
     case 'Medium': return 'bg-yellow-600 text-yellow-100'
     case 'Hard': return 'bg-orange-600 text-orange-100'
     case 'Deadly': return 'bg-red-600 text-red-100'
-    default: return 'bg-gray-600 text-gray-100'
+    default: return 'bg-stone-600 text-stone-100'
   }
 }
 
@@ -769,31 +768,8 @@ onMounted(async () => {
 
 <style scoped>
 .encounters-view {
-  min-height: 100vh;
-  height: 100vh;
+  min-height: 90vh;
+  height: 90vh;
   overflow-y: auto;
-  background-color: #18181b !important;
-}
-
-.bg-gray-800.rounded-xl.border {
-  background-color: #23232a !important;
-  border-color: #222 !important;
-}
-
-.p-6 {
-  background-color: #18181b !important;
-}
-
-.bg-gray-700.rounded-lg.p-4 {
-  background-color: #23232a !important;
-  border-color: #222 !important;
-}
-
-.text-gray-300, .text-gray-400, .text-gray-500 {
-  color: #b3b3b3 !important;
-}
-
-.text-white {
-  color: #e5e5e5 !important;
 }
 </style>

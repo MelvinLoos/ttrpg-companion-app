@@ -1,7 +1,7 @@
 <template>
   <div class="gm-monster-library monster-library">
-    <header class="library-header">
-      <div class="header-row">
+    <header class="library-header bg-stone-900 text-stone-100">
+      <div class="header-row bg-stone-900 text-stone-100">
         <h2>Monster Library</h2>
         <button @click="showUploadModal = true" class="add-monster-btn">+ Add Monster</button>
       </div>

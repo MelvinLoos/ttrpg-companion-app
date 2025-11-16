@@ -1,5 +1,5 @@
 <template>
-  <div class="screen-layout">
+  <div class="screen-layout min-h-screen bg-stone-900 text-stone-100">
     <!-- Notifications -->
     <div v-if="notifications.length > 0" class="notifications-container">
       <div 

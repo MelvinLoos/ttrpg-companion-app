@@ -1,5 +1,5 @@
 <template>
-  <div class="player-screen-lobby">
+  <div class="player-screen-lobby min-h-screen bg-stone-900 text-stone-100">
     <!-- Background image display -->
     <div 
       v-if="session?.active_image_url" 
