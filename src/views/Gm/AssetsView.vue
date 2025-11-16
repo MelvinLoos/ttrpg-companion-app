@@ -50,9 +50,9 @@
             :show-info="true"
             :show-modal="true"
           />
-          <div class="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition">
+          <div class="absolute top-3 right-3 z-10">
             <button 
-              class="px-2 py-2 bg-red-600/90 rounded text-white text-lg shadow hover:bg-red-700/95 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-md"
+              class="px-2 py-2 bg-red-600/90 rounded text-white text-lg shadow hover:bg-red-700/95 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-md border border-red-700"
               @click="handleDelete(asset)"
               :disabled="store.state.loading"
               title="Delete Asset"
