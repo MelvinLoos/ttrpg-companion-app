@@ -1,5 +1,5 @@
 <template>
-  <div class="player-screen-in-play">
+  <div class="player-screen-in-play min-h-screen bg-stone-900 text-stone-100">
     <!-- Background image display with fade transition -->
     <div class="background-container">
       <transition name="scene-fade" mode="out-in">
@@ -29,10 +29,15 @@
 
       <!-- Main content area -->
       <main class="in-play-main">
+        <!-- Combat tracker sidebar (when active) -->
+        <div v-if="showCombatTracker" class="combat-sidebar">
+          <PublicCombatTracker :session-id="route.params.session_id as string" />
+        </div>
         <!-- Simplified overlay containers -->
         <div class="overlay-containers">
+          
           <!-- Party members display at bottom -->
-          <div class="party-section">
+          <div class="party-section" :class="{ 'with-combat': showCombatTracker }">
             <PartyBar :session-id="route.params.session_id as string" :compact="true" :square="true" />
           </div>
         </div>
@@ -88,7 +93,10 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { GameSession } from '../../types/session'
 import { supabase } from '../../plugins/supabase'
+import { useCombatStore } from '../../stores/combat'
+import { mapSession } from '../../stores/session'
 import PartyBar from '../../components/PartyBar.vue'
+import PublicCombatTracker from '../../components/PublicCombatTracker.vue'
 
 const route = useRoute()
 
@@ -97,6 +105,9 @@ const session = ref<GameSession | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const playerCount = ref(0)
+
+// Combat store
+const combatStore = useCombatStore()
 
 // Current image asset state
 const currentImageAsset = ref<{id: string, url: string, name?: string} | null>(null)
@@ -109,6 +120,10 @@ let notificationIdCounter = 1
 const isFullscreen = ref(false)
 
 // Computed
+const showCombatTracker = computed(() => {
+  return !!combatStore.activeCombat && combatStore.participants.length > 0
+})
+
 const statusText = computed(() => {
   switch (session.value?.state) {
     case 'IN_PLAY':
@@ -173,7 +188,7 @@ async function loadSessionData() {
       throw new Error('Session not found')
     }
 
-    session.value = sessionData
+  session.value = mapSession(sessionData)
 
     // Load player count
     await loadPlayerCount(sessionId)
@@ -183,6 +198,9 @@ async function loadSessionData() {
     if (currentAssetId) {
       await loadCurrentImageAsset(currentAssetId)
     }
+
+    // Load combat data
+    await combatStore.fetchActiveCombat(sessionId)
 
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load session'
@@ -552,6 +570,47 @@ onMounted(async () => {
   padding: 0.4rem 0.6rem 0.2rem;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   width: 100%;
+}
+
+.party-section.with-combat {
+  width: 100%;
+}
+
+/* Combat sidebar */
+.combat-sidebar {
+  margin-left: 30px;
+  width: 400px;
+  max-width: calc(100vw - 1rem);
+  z-index: 10;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile adjustments for combat sidebar */
+@media (max-width: 768px) {
+  .combat-sidebar {
+    top: auto;
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    width: auto;
+    max-height: 50vh;
+  }
+  
+  .party-section.with-combat {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
 }
 
 .scene-description {

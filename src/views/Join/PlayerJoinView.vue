@@ -196,6 +196,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCharacterStore } from '../../stores/character'
+import { mapSession } from '../../stores/session'
 import type { GameSession, SessionCharacter } from '../../types/session'
 import type { CharacterStats } from '../../types/character'
 import type { Database } from '../../types/supabase'
@@ -296,7 +297,7 @@ async function loadSession() {
       throw new Error('Session not found or has ended.')
     }
 
-    session.value = sessionData
+    session.value = mapSession(sessionData)
 
     // Load current players
     await loadCurrentPlayers(sessionId)

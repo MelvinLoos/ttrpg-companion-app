@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.76.1",
+    "@tailwindcss/vite": "^4.1.17",
     "pinia": "^3.0.3",
     "qrcode": "^1.5.4",
     "vue": "^3.5.22",
@@ -21,6 +22,7 @@
     "@types/qrcode": "^1.5.6",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
+    "tailwindcss": "^4.1.17",
     "tsx": "^4.20.6",
     "typescript": "~5.9.3",
     "vite": "^7.1.7",

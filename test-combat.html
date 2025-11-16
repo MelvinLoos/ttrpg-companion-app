@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combat System Test</title>
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+        
+        const supabase = createClient(
+            'http://127.0.0.1:54321',
+            'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH'
+        )
+
+        // Test monster creation
+        async function testMonsterCreation() {
+            const resultsEl = document.getElementById('results')
+            resultsEl.innerHTML = 'Testing monster creation...<br>'
+
+            try {
+                const { data, error } = await supabase
+                    .from('monster_templates')
+                    .insert([{
+                        name: 'Test Orc',
+                        hit_points: 15,
+                        armor_class: 13,
+                        challenge_rating: '1',
+                        description: 'A test orc for debugging from browser'
+                    }])
+                    .select()
+                    .single()
+
+                if (error) {
+                    resultsEl.innerHTML += `❌ Error: ${JSON.stringify(error, null, 2)}<br>`
+                } else {
+                    resultsEl.innerHTML += `✅ Monster created: ${data.name} (${data.id})<br>`
+                    
+                    // List all monsters
+                    const { data: allMonsters, error: fetchError } = await supabase
+                        .from('monster_templates')
+                        .select('*')
+                    
+                    if (fetchError) {
+                        resultsEl.innerHTML += `❌ Fetch error: ${JSON.stringify(fetchError, null, 2)}<br>`
+                    } else {
+                        resultsEl.innerHTML += `📋 Total monsters: ${allMonsters.length}<br>`
+                        allMonsters.forEach(monster => {
+                            resultsEl.innerHTML += `   - ${monster.name} (HP: ${monster.hit_points}, AC: ${monster.armor_class})<br>`
+                        })
+                    }
+                }
+            } catch (err) {
+                resultsEl.innerHTML += `❌ Exception: ${err.message}<br>`
+            }
+        }
+
+        // Test encounter creation
+        async function testEncounterCreation() {
+            const resultsEl = document.getElementById('results')
+            resultsEl.innerHTML += '<br>Testing encounter creation...<br>'
+
+            try {
+                const { data, error } = await supabase
+                    .from('combat_encounters')
+                    .insert([{
+                        name: 'Test Encounter',
+                        description: 'A test encounter for debugging'
+                    }])
+                    .select()
+                    .single()
+
+                if (error) {
+                    resultsEl.innerHTML += `❌ Error: ${JSON.stringify(error, null, 2)}<br>`
+                } else {
+                    resultsEl.innerHTML += `✅ Encounter created: ${data.name} (${data.id})<br>`
+                }
+            } catch (err) {
+                resultsEl.innerHTML += `❌ Exception: ${err.message}<br>`
+            }
+        }
+
+        // Clear all test data
+        async function clearTestData() {
+            const resultsEl = document.getElementById('results')
+            resultsEl.innerHTML += '<br>Clearing test data...<br>'
+
+            try {
+                const { error: monsterError } = await supabase
+                    .from('monster_templates')
+                    .delete()
+                    .or('name.ilike.%test%')
+
+                const { error: encounterError } = await supabase
+                    .from('combat_encounters')
+                    .delete()
+                    .or('name.ilike.%test%')
+
+                if (monsterError || encounterError) {
+                    resultsEl.innerHTML += `❌ Cleanup errors: ${JSON.stringify({monsterError, encounterError}, null, 2)}<br>`
+                } else {
+                    resultsEl.innerHTML += `✅ Test data cleared<br>`
+                }
+            } catch (err) {
+                resultsEl.innerHTML += `❌ Cleanup exception: ${err.message}<br>`
+            }
+        }
+
+        window.testMonsterCreation = testMonsterCreation
+        window.testEncounterCreation = testEncounterCreation
+        window.clearTestData = clearTestData
+    </script>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1a1a1a; 
+            color: #fff; 
+            margin: 2rem; 
+        }
+        button { 
+            background: #4a90e2; 
+            color: white; 
+            border: none; 
+            padding: 0.5rem 1rem; 
+            margin: 0.5rem; 
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background: #357abd; }
+        #results { 
+            background: #2a2a2a; 
+            padding: 1rem; 
+            margin: 1rem 0; 
+            border-radius: 4px;
+            white-space: pre-line;
+        }
+    </style>
+</head>
+<body>
+    <h1>Combat System Database Test</h1>
+    <button onclick="testMonsterCreation()">Test Monster Creation</button>
+    <button onclick="testEncounterCreation()">Test Encounter Creation</button>
+    <button onclick="clearTestData()">Clear Test Data</button>
+    
+    <div id="results">Click a button to test the combat system...</div>
+</body>
+</html>

@@ -1,5 +1,5 @@
 <template>
-  <div class="screen-layout">
+  <div class="screen-layout min-h-screen bg-stone-900 text-stone-100">
     <!-- Notifications -->
     <div v-if="notifications.length > 0" class="notifications-container">
       <div 
@@ -40,6 +40,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '../../plugins/supabase'
 import type { GameSession } from '../../types/session'
+import { mapSession } from '../../stores/session'
 import PlayerScreenLobby from './PlayerScreenLobby.vue'
 import PlayerScreenInPlay from './PlayerScreenInPlay.vue'
 
@@ -97,7 +98,7 @@ async function loadSessionData() {
       return
     }
 
-    session.value = data
+  session.value = mapSession(data)
   } catch (err) {
     console.error('Error loading session:', err)
   } finally {

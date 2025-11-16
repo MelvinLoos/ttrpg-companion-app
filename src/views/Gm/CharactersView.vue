@@ -1,13 +1,16 @@
 <template>
-  <div class="characters-view">
-    <header class="characters-header">
-      <h2>Premade Characters</h2>
-      <button class="create-btn" @click="showCreateDialog = true">
+  <div class="min-h-screen bg-stone-900 text-stone-100 overflow-y-auto">
+  <header class="flex justify-between items-center bg-stone-900 text-stone-100 border-b p-6 mb-8">
+      <div>
+          <h1 class="text-3xl font-bold text-white">Premade Characters</h1>
+          <p class="text-stone-400 mt-1">Manage your premade characters for sessions</p>
+        </div>
+      <button class="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 shadow-lg" @click="showCreateDialog = true">
         Create Character
       </button>
     </header>
 
-    <div class="characters-grid">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6">
       <div v-if="store.state.loading" class="loading">
         <p>Loading characters...</p>
       </div>
@@ -17,96 +20,73 @@
       <div v-else-if="store.sortedCharacters.length === 0" class="no-characters">
         <p>No premade characters yet. Click 'Create Character' to get started.</p>
       </div>
-      <div v-else class="characters-list">
-        <div v-for="character in store.sortedCharacters" :key="character.id" class="character-card">
-          <div class="portrait">
-            <img
-              v-if="character.portrait_url"
-              :src="character.portrait_url"
-              :alt="`${character.name}'s portrait`"
-            />
-            <div v-else class="no-portrait">
-              No Portrait
-            </div>
+      <div v-else>
+        <div v-for="character in store.sortedCharacters" :key="character.id" class="bg-stone-800 rounded-lg border border-stone-700 p-6 flex flex-col gap-4 shadow hover:shadow-lg transition">
+          <div class="w-24 h-24 rounded bg-stone-900 flex items-center justify-center overflow-hidden mb-2">
+            <img v-if="character.portrait_url" :src="character.portrait_url" :alt="`${character.name}'s portrait`" class="object-cover w-full h-full rounded" />
+            <span v-else class="text-stone-500 text-xs">No Portrait</span>
           </div>
-          <div class="character-info">
-            <h3>{{ character.name }}</h3>
-            <div v-if="character.stats_json" class="stats">
-              <div v-for="(value, key) in character.stats_json" :key="key" class="stat">
-                <span class="stat-label">{{ key }}:</span>
-                <span class="stat-value">{{ value }}</span>
+          <div class="flex-1">
+            <h3 class="text-lg font-bold mb-2">{{ character.name }}</h3>
+            <div v-if="character.stats_json" class="grid grid-cols-3 gap-2 text-sm">
+              <div v-for="(value, key) in character.stats_json" :key="key" class="flex gap-1">
+                <span class="font-semibold text-stone-400">{{ key }}:</span>
+                <span class="text-stone-100">{{ value }}</span>
               </div>
             </div>
           </div>
-          <div class="character-actions">
-            <button @click="editCharacter(character)">Edit</button>
-            <button @click="deleteCharacter(character.id)" class="delete">Delete</button>
+          <div class="flex gap-2 mt-4">
+            <button @click="editCharacter(character)" class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition">Edit</button>
+            <button @click="deleteCharacter(character.id)" class="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition">Delete</button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Create/Edit character dialog -->
-    <div v-if="showCreateDialog" class="dialog-overlay" @click.self="closeDialog">
-      <div class="dialog-content">
-        <h3>{{ editingCharacter ? 'Edit Character' : 'Create Character' }}</h3>
-        <form @submit.prevent="handleSubmit">
-          <div class="form-group">
-            <label for="character-name">Character Name</label>
+    <div v-if="showCreateDialog" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+      <div class="bg-stone-800 rounded-xl w-full max-w-md border border-stone-700 shadow-2xl p-8">
+        <h3 class="text-2xl font-bold text-white mb-6">{{ editingCharacter ? 'Edit Character' : 'Create Character' }}</h3>
+        <form @submit.prevent="handleSubmit" class="space-y-6">
+          <div>
+            <label for="character-name" class="block text-sm font-semibold text-stone-300 mb-2">Character Name</label>
             <input 
               id="character-name"
               v-model="formData.name"
               type="text"
               required
+              class="w-full p-3 bg-stone-700 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
               placeholder="Enter character name"
             />
           </div>
-
-          <div class="form-group">
-            <label for="character-portrait">Portrait Image</label>
-            <div class="portrait-upload">
-              <img
-                v-if="portraitPreview"
-                :src="portraitPreview"
-                alt="Portrait preview"
-                class="preview"
-              />
-              <div v-else-if="formData.portrait_url" class="preview">
-                <img :src="formData.portrait_url" alt="Current portrait" />
-              </div>
-              <div v-else class="no-preview">
-                No portrait selected
-              </div>
-              <input
-                id="character-portrait"
-                type="file"
-                accept="image/*"
-                @change="handlePortraitChange"
-              />
+          <div>
+            <label for="character-portrait" class="block text-sm font-semibold text-stone-300 mb-2">Portrait Image</label>
+            <div class="flex flex-col gap-4 items-center">
+              <img v-if="portraitPreview" :src="portraitPreview" alt="Portrait preview" class="w-32 h-32 rounded-lg object-cover bg-stone-900" />
+              <img v-else-if="formData.portrait_url" :src="formData.portrait_url" alt="Current portrait" class="w-32 h-32 rounded-lg object-cover bg-stone-900" />
+              <div v-else class="w-32 h-32 rounded-lg bg-stone-900 flex items-center justify-center text-stone-500 text-sm">No portrait selected</div>
+              <input id="character-portrait" type="file" accept="image/*" @change="handlePortraitChange" class="mt-2" />
             </div>
           </div>
-
-          <div class="form-group">
-            <label>Character Stats</label>
-            <div class="stats-grid">
-              <div v-for="stat in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']" :key="stat" class="stat-input">
-                <label :for="'stat-' + stat">{{ stat }}</label>
+          <div>
+            <label class="block text-sm font-semibold text-stone-300 mb-2">Character Stats</label>
+            <div class="grid grid-cols-3 gap-4">
+              <div v-for="stat in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']" :key="stat" class="flex flex-col gap-1">
+                <label :for="'stat-' + stat" class="text-xs text-stone-400">{{ stat }}</label>
                 <input
                   :id="'stat-' + stat"
                   v-model.number="stats[stat as keyof typeof stats]"
                   type="number"
                   min="0"
+                  class="w-full p-2 bg-stone-700 border border-stone-600 rounded text-white text-center"
                   placeholder="10"
                 />
               </div>
             </div>
           </div>
-
-          <div class="form-actions">
-            <button type="button" @click="closeDialog">Cancel</button>
-            <button type="submit" :disabled="store.state.loading">
-              {{ store.state.loading ? 'Saving...' : (editingCharacter ? 'Save Changes' : 'Create Character') }}
-            </button>
+          <div class="flex gap-4 pt-4 border-t border-stone-700 mt-6">
+            <button type="button" @click="closeDialog" class="flex-1 bg-stone-600 hover:bg-stone-700 text-white py-3 px-4 rounded-lg transition-colors font-medium">Cancel</button>
+            <button type="submit" :disabled="store.state.loading" class="flex-2 bg-blue-600 hover:bg-blue-700 disabled:bg-stone-600 disabled:cursor-not-allowed text-white py-3 px-6 rounded-lg transition-colors font-medium">{{ store.state.loading ? 'Saving...' : (editingCharacter ? 'Save Changes' : 'Create Character') }}</button>
           </div>
         </form>
       </div>
@@ -147,13 +127,24 @@ function editCharacter(character: PremadeCharacter) {
     name: character.name,
     portrait_url: character.portrait_url
   }
-  stats.value = character.stats_json || {
-    STR: 10,
-    DEX: 10,
-    CON: 10,
-    INT: 10,
-    WIS: 10,
-    CHA: 10
+  if (typeof character.stats_json === 'object' && character.stats_json !== null && 'STR' in character.stats_json) {
+    stats.value = {
+      STR: Number(character.stats_json.STR) ?? 10,
+      DEX: Number(character.stats_json.DEX) ?? 10,
+      CON: Number(character.stats_json.CON) ?? 10,
+      INT: Number(character.stats_json.INT) ?? 10,
+      WIS: Number(character.stats_json.WIS) ?? 10,
+      CHA: Number(character.stats_json.CHA) ?? 10
+    }
+  } else {
+    stats.value = {
+      STR: 10,
+      DEX: 10,
+      CON: 10,
+      INT: 10,
+      WIS: 10,
+      CHA: 10
+    }
   }
   showCreateDialog.value = true
 }
@@ -238,286 +229,4 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.characters-view {
-  padding: 0.25rem;
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.characters-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.create-btn {
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.25rem;
-  color: inherit;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.create-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.no-characters {
-  text-align: center;
-  padding: 3rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-}
-
-.characters-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.character-card {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 1rem;
-}
-
-.portrait {
-  width: 100px;
-  height: 100px;
-  border-radius: 0.25rem;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.portrait img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.no-portrait {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 0.8rem;
-  opacity: 0.5;
-}
-
-.character-info {
-  flex: 1;
-}
-
-.character-info h3 {
-  margin: 0 0 0.5rem;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.stat {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.stat-label {
-  opacity: 0.7;
-}
-
-.character-actions {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.character-actions button {
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.25rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: inherit;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.character-actions button:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.character-actions button.delete {
-  background: rgba(255, 0, 0, 0.1);
-  border-color: rgba(255, 0, 0, 0.2);
-}
-
-.character-actions button.delete:hover {
-  background: rgba(255, 0, 0, 0.2);
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 3rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-}
-
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.dialog-content {
-  background: #1a1a1a;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  width: 100%;
-  max-width: 500px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.dialog-content h3 {
-  margin: 0 0 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.form-group input[type="text"],
-.form-group input[type="number"] {
-  width: 100%;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: inherit;
-  font-size: 1rem;
-}
-
-.portrait-upload {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: center;
-}
-
-.preview {
-  width: 200px;
-  height: 200px;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.no-preview {
-  width: 200px;
-  height: 200px;
-  border-radius: 0.5rem;
-  background: rgba(0, 0, 0, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 0.9rem;
-  opacity: 0.5;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-.stat-input {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.stat-input label {
-  font-size: 0.8rem;
-  opacity: 0.7;
-}
-
-.stat-input input {
-  width: 100%;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: inherit;
-  font-size: 1rem;
-  text-align: center;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.form-actions button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.25rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: inherit;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.form-actions button[type="submit"] {
-  background: rgba(59, 130, 246, 0.5);
-  border-color: rgba(59, 130, 246, 0.8);
-}
-
-.form-actions button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.form-actions button[type="submit"]:hover:not(:disabled) {
-  background: rgba(59, 130, 246, 0.7);
-}
-
-.form-actions button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 </style>

@@ -1,20 +1,30 @@
 <template>
-  <div class="assets-view">
-    <header class="assets-header">
-      <h2>Asset Library</h2>
-      <div class="asset-filters">
-        <button 
-          v-for="type in assetTypes" 
-          :key="type.value"
-          :class="{ active: activeType === type.value }"
-          @click="activeType = type.value"
-        >
-          {{ type.label }}
-        </button>
+  <div class="min-h-screen w-full h-full overflow-y-auto p-1">
+    <header class="assets-header bg-stone-900 text-stone-100 border-b p-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-bold text-white">Asset Library</h1>
+          <p class="text-stone-400 mt-1">Manage your collection of scenes, maps, and portraits</p>
+        </div>
+        <div class="flex gap-2">
+          <button 
+            v-for="type in assetTypes" 
+            :key="type.value"
+            @click="activeType = type.value"
+            :class="[
+              'px-4 py-2 rounded border font-medium text-sm transition',
+              activeType === type.value
+                ? 'bg-blue-200/20 border-blue-400/40 text-blue-300'
+                : 'bg-white/10 border-white/20 text-inherit hover:bg-white/20',
+            ]"
+          >
+            {{ type.label }}
+          </button>
+        </div>
       </div>
     </header>
 
-    <div class="assets-content">
+    <div class="flex flex-col gap-8">
       <!-- Uploader -->
       <AssetUploader 
         :accept="uploadAccept"
@@ -23,26 +33,26 @@
       />
 
       <!-- Asset Grid -->
-      <div v-if="store.state.loading" class="loading">
+      <div v-if="store.state.loading" class="text-center py-12 bg-white/5 rounded-lg border border-dashed border-white/20">
         <p>Loading assets...</p>
       </div>
-      <div v-else-if="store.state.error" class="error">
+      <div v-else-if="store.state.error" class="text-center py-12 bg-white/5 rounded-lg border border-dashed border-white/20">
         <p>{{ store.state.error }}</p>
       </div>
-      <div v-else class="asset-grid">
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <div 
           v-for="asset in filteredAssets" 
           :key="asset.id" 
-          class="asset-card"
+          class="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden transition duration-300 hover:bg-white/8 hover:border-white/20 hover:-translate-y-0.5 hover:shadow-xl"
         >
           <AssetPreview 
             :asset="asset" 
             :show-info="true"
             :show-modal="true"
           />
-          <div class="asset-actions">
+          <div class="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition">
             <button 
-              class="delete-btn" 
+              class="px-2 py-2 bg-red-600/90 rounded text-white text-lg shadow hover:bg-red-700/95 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-md"
               @click="handleDelete(asset)"
               :disabled="store.state.loading"
               title="Delete Asset"
@@ -112,117 +122,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.assets-view {
-  padding: 0.25rem;
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-}
 
-.assets-header {
-  margin-bottom: 2rem;
-}
-
-.assets-header h2 {
-  margin: 0 0 1rem;
-}
-
-.asset-filters {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.asset-filters button {
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.25rem;
-  color: inherit;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-
-.asset-filters button:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.asset-filters button.active {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.4);
-}
-
-.assets-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 3rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-}
-
-.asset-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
-}
-
-.asset-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
-  overflow: hidden;
-  position: relative;
-  transition: all 0.3s ease;
-}
-
-.asset-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-}
-
-.asset-actions {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 10;
-  opacity: 0;
-  transition: all 0.2s ease;
-}
-
-.asset-card:hover .asset-actions {
-  opacity: 1;
-}
-
-.delete-btn {
-  padding: 0.5rem;
-  background: rgba(239, 68, 68, 0.9);
-  border: none;
-  border-radius: 0.5rem;
-  color: white;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.delete-btn:hover {
-  background: rgba(220, 38, 38, 0.95);
-  transform: scale(1.1);
-}
-
-.delete-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
 </style>

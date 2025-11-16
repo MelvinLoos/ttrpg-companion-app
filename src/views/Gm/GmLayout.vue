@@ -1,5 +1,5 @@
 <template>
-  <div class="gm-layout">
+  <div class="gm-layout bg-stone-900 text-stone-100">
     <header>
       <div class="header-left">
         <h1>GM Control Panel</h1>
@@ -7,6 +7,8 @@
           <router-link :to="{ name: 'gm-lobby' }">Lobby</router-link>
           <router-link :to="{ name: 'gm-sessions' }">Sessions</router-link>
           <router-link :to="{ name: 'gm-characters' }">Characters</router-link>
+          <router-link :to="{ name: 'gm-monsters' }">Monsters</router-link>
+          <router-link :to="{ name: 'gm-encounters' }">Encounters</router-link>
           <router-link :to="{ name: 'gm-combat' }">Combat</router-link>
           <router-link :to="{ name: 'gm-assets' }">Assets</router-link>
         </nav>
@@ -85,7 +87,6 @@ async function handleSignOut() {
   padding: 0.5rem;
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 1rem;
 }
 
 header {

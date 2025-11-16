@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { PremadeCharacter, CharacterState } from '../types/character'
+import type { Json } from '../types/supabase'
 import { supabase } from '../plugins/supabase'
 
 export const useCharacterStore = defineStore('character', () => {
@@ -28,7 +29,16 @@ export const useCharacterStore = defineStore('character', () => {
         .order('name')
 
       if (error) throw error
-      state.value.premadeCharacters = data
+      const mapped = (data || []).map((c: any) => ({
+        id: c.id,
+        gm_id: c.gm_id ?? null,
+        name: c.name ?? '',
+        portrait_url: c.portrait_url ?? null,
+        stats_json: c.stats_json ?? null,
+        created_at: c.created_at ?? null,
+        updated_at: c.updated_at ?? null
+      }))
+  state.value.premadeCharacters = mapped as unknown as PremadeCharacter[]
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to fetch characters'
     } finally {
@@ -79,6 +89,18 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
+  function toJsonStats(stats: any): { [key: string]: Json | undefined } {
+    if (!stats || typeof stats !== 'object') return {}
+    return {
+      STR: stats.STR ?? 10,
+      DEX: stats.DEX ?? 10,
+      CON: stats.CON ?? 10,
+      INT: stats.INT ?? 10,
+      WIS: stats.WIS ?? 10,
+      CHA: stats.CHA ?? 10
+    }
+  }
+
   async function createCharacter(character: Omit<PremadeCharacter, 'id' | 'gm_id' | 'portrait_url' | 'created_at' | 'updated_at'>, portrait?: File) {
     state.value.loading = true
     state.value.error = null
@@ -94,13 +116,13 @@ export const useCharacterStore = defineStore('character', () => {
 
       const { data, error } = await supabase
         .from('premade_characters')
-        .insert([{ ...character, portrait_url, gm_id: user.id }])
+        .insert([{ ...character, stats_json: toJsonStats(character.stats_json), portrait_url, gm_id: user.id }])
         .select()
         .single()
 
       if (error) throw error
 
-      state.value.premadeCharacters = [...state.value.premadeCharacters, data]
+  state.value.premadeCharacters = [...state.value.premadeCharacters, data]
       return data
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to create character'
@@ -122,7 +144,7 @@ export const useCharacterStore = defineStore('character', () => {
 
       const { data, error } = await supabase
         .from('premade_characters')
-        .update({ ...updates, portrait_url })
+        .update({ ...updates, stats_json: toJsonStats(updates.stats_json), portrait_url })
         .eq('id', id)
         .select()
         .single()

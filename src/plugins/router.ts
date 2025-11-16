@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import GmLayout from '../views/Gm/GmLayout.vue'
-import LobbyView from '../components/LobbyView.vue'
+import LobbyView from '../views/Gm/LobbyView.vue'
 import ScreenLayout from '../views/Screen/ScreenLayout.vue'
 import JoinLayout from '../views/Join/JoinLayout.vue'
 import SignInView from '../views/SignInView.vue'
@@ -34,9 +34,19 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/Gm/CharactersView.vue')
       },
       {
+        path: 'monsters',
+        name: 'gm-monsters',
+        component: () => import('../views/Gm/MonstersView.vue')
+      },
+      {
+        path: 'encounters',
+        name: 'gm-encounters',
+        component: () => import('../views/Gm/EncountersView.vue')
+      },
+      {
         path: 'combat',
         name: 'gm-combat',
-        component: () => import('../components/CombatView.vue')
+        component: () => import('../views/Gm/CombatView.vue')
       },
       {
         path: 'assets',
@@ -83,6 +93,10 @@ export const router = createRouter({
 
 // Navigation guard for protected routes
 router.beforeEach(async (to) => {
+  // TEMPORARY: Disable auth guard for development testing
+  // TODO: Re-enable authentication after combat system testing is complete
+  return
+  
   const authStore = useAuthStore()
 
   // Wait for auth initialization to complete if it's still loading

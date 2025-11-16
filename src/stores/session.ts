@@ -3,6 +3,22 @@ import { ref, computed } from 'vue'
 import type { GameSession, SessionState } from '../types/session'
 import { supabase } from '../plugins/supabase'
 
+export function mapSession(raw: any): GameSession {
+  return {
+    id: raw.id,
+    gm_id: raw.gm_id ?? '',
+    name: raw.name ?? '',
+    showing: raw.showing === 'combat' ? 'combat' : 'lobby',
+    state: raw.state ?? 'LOBBY',
+    active_image_url: raw.active_image_url ?? null,
+    current_image_asset_id: raw.current_image_asset_id ?? null,
+    teaser_text: raw.teaser_text ?? null,
+    active_turn_character_id: raw.active_turn_character_id ?? null,
+    created_at: raw.created_at ?? '',
+    updated_at: raw.updated_at ?? ''
+  }
+}
+
 export const useSessionStore = defineStore('session', () => {
   // State
   const state = ref<SessionState>({
@@ -15,9 +31,11 @@ export const useSessionStore = defineStore('session', () => {
 
   // Getters
   const activeSessions = computed(() => 
-    state.value.sessions.sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
+    state.value.sessions.sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    })
   )
 
   const currentCharacters = computed(() => 
@@ -39,7 +57,7 @@ export const useSessionStore = defineStore('session', () => {
 
       if (error) throw error
 
-      state.value.sessions = data
+      state.value.sessions = (data || []).map(mapSession)
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to fetch sessions'
     } finally {
@@ -70,7 +88,7 @@ export const useSessionStore = defineStore('session', () => {
 
       if (error) throw error
 
-      state.value.sessions = [...state.value.sessions, data]
+      state.value.sessions = [...state.value.sessions, mapSession(data)]
       return data
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to create session'
@@ -95,11 +113,10 @@ export const useSessionStore = defineStore('session', () => {
       if (error) throw error
 
       state.value.sessions = state.value.sessions.map(s => 
-        s.id === id ? { ...s, ...data } : s
+        s.id === id ? mapSession({ ...s, ...data }) : s
       )
-
       if (state.value.currentSession?.id === id) {
-        state.value.currentSession = { ...state.value.currentSession, ...data }
+        state.value.currentSession = mapSession({ ...state.value.currentSession, ...data })
       }
 
       return data
@@ -172,38 +189,36 @@ export const useSessionStore = defineStore('session', () => {
         'postgres_changes' as const,
         { event: '*', schema: 'public', table: 'sessions' },
         (payload) => {
-          if (!payload.new && !payload.old) return
-
+          if (!payload.new && !payload.old) return;
           switch (payload.eventType) {
             case 'INSERT':
               if (payload.new) {
-                state.value.sessions = [...state.value.sessions, payload.new as GameSession]
+                state.value.sessions = [...state.value.sessions, mapSession(payload.new)];
               }
-              break
-            case 'UPDATE': {
+              break;
+            case 'UPDATE':
               if (payload.new) {
-                const updated = payload.new as GameSession
-                state.value.sessions = state.value.sessions.map(s => 
+                const updated = mapSession(payload.new);
+                state.value.sessions = state.value.sessions.map(s =>
                   s.id === updated.id ? updated : s
-                )
+                );
                 if (state.value.currentSession?.id === updated.id) {
-                  state.value.currentSession = updated
+                  state.value.currentSession = updated;
                 }
               }
-              break
-            }
+              break;
             case 'DELETE':
               if (payload.old?.id) {
-                state.value.sessions = state.value.sessions.filter(s => s.id !== payload.old.id)
+                state.value.sessions = state.value.sessions.filter(s => s.id !== payload.old.id);
                 if (state.value.currentSession?.id === payload.old.id) {
-                  state.value.currentSession = null
+                  state.value.currentSession = null;
                 }
               }
-              break
+              break;
           }
         }
       )
-      .subscribe()
+      .subscribe();
 
     // Note: Removed session_characters subscription to avoid conflicts with PartyBar
     // The PartyBar component handles its own character subscriptions with proper filtering

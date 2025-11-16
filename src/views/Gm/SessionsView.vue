@@ -1,10 +1,17 @@
 <template>
-  <div class="sessions-view">
-    <header class="sessions-header">
-      <h2>Game Sessions</h2>
-      <button class="create-btn" @click="showCreateDialog = true">
-        Create New Session
-      </button>
+  <div class="sessions-view min-h-screen bg-stone-900 text-stone-100">
+    <header class="sessions-header bg-stone-900 text-stone-100 border-b p-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-bold text-white">Game Sessions</h1>
+          <p class="text-stone-400 mt-1">Manage your game sessions and keep track of your campaigns</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3"></div>
+          <button class="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 shadow-lg" @click="showCreateDialog = true">
+            Create New Session
+          </button>
+        </div>
     </header>
 
     <div class="sessions-grid">
@@ -31,7 +38,7 @@
           <div class="session-info">
             <h3>{{ session.name }}</h3>
             <p v-if="session.teaser_text" class="teaser">{{ session.teaser_text }}</p>
-            <p class="meta">Created {{ formatDate(session.created_at) }}</p>
+            <p class="meta">Created {{ formatDate(session.created_at || '') }}</p>
           </div>
           <div class="session-actions">
             <button @click="editSession(session)" class="edit-btn">Edit</button>
@@ -196,28 +203,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.sessions-view {
-  padding: 0.25rem;
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.sessions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
 .create-btn {
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.25rem;
-  color: inherit;
   cursor: pointer;
-  font-size: 0.9rem;
 }
 
 .create-btn:hover {
