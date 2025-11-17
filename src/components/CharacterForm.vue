@@ -43,7 +43,7 @@
         <div class="grid grid-cols-3 gap-4">
           <div v-for="stat in statKeys" :key="stat" class="flex flex-col gap-1">
             <label :for="'stat-' + stat" class="text-xs">{{ stat }}</label>
-            <input :id="'stat-' + stat" v-model.number="localStats[stat as keyof typeof localStats.value]" type="number" min="0"
+            <input :id="'stat-' + stat" v-model.number="localStats[stat]" type="number" min="0"
               class="w-full p-2 bg-stone-700 border border-stone-600 rounded text-white text-center"
               placeholder="10" />
           </div>
@@ -61,7 +61,7 @@
 
 <script setup lang="ts">
 
-import { ref, computed, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import AssetUploader from './AssetUploader.vue'
 import { useAssetStore } from '../stores/asset'
 import type { Asset } from '../stores/asset'
@@ -82,7 +82,7 @@ const localName = ref(props.name || '')
 const localPortraitUrl = ref(props.portraitUrl || null)
 const portraitPreview = ref<string | null>(null)
 const defaultStats: CharacterStats = { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 }
-const localStats = ref<CharacterStats>(props.stats ? { ...props.stats } : { ...defaultStats })
+const localStats = reactive<CharacterStats>(props.stats ? { ...props.stats } : { ...defaultStats })
 const statKeys: (keyof CharacterStats)[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
 const activeTab = ref('appearance')
 
@@ -101,19 +101,17 @@ function handleSubmit() {
   emit('submit', {
     name: localName.value,
     portrait_url: localPortraitUrl.value,
-    stats: localStats.value
+    stats: localStats
   })
 }
 watch(() => props.name, (val) => { localName.value = val || '' })
 watch(() => props.portraitUrl, (val) => { localPortraitUrl.value = val || null })
 watch(() => props.stats, (val) => {
-  localStats.value = {
-    STR: val?.STR ?? 10,
-    DEX: val?.DEX ?? 10,
-    CON: val?.CON ?? 10,
-    INT: val?.INT ?? 10,
-    WIS: val?.WIS ?? 10,
-    CHA: val?.CHA ?? 10
-  }
+  localStats.STR = val?.STR ?? 10
+  localStats.DEX = val?.DEX ?? 10
+  localStats.CON = val?.CON ?? 10
+  localStats.INT = val?.INT ?? 10
+  localStats.WIS = val?.WIS ?? 10
+  localStats.CHA = val?.CHA ?? 10
 })
 </script>

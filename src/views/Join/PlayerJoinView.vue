@@ -82,33 +82,14 @@
           <!-- New Character Creation -->
           <div v-if="characterType === 'new'" class="mb-8">
             <h4 class="mb-2 text-lg text-white/80">Create Your Character</h4>
-            <!-- Portrait Picker Grid -->
-            <div class="mb-6">
-              <h5 class="mb-2 text-md text-white/80">Choose a Portrait</h5>
-              <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mb-4">
-                <button v-for="portrait in portraitAssets" :key="portrait.id"
-                  type="button"
-                  @click="selectPortrait(portrait.url)"
-                  :class="[
-                    'w-20 h-20 rounded-full overflow-hidden border-2 flex items-center justify-center bg-white/10 cursor-pointer transition',
-                    portraitPreview === portrait.url ? 'border-blue-500 ring-2 ring-blue-400' : 'border-white/10 hover:border-blue-400'
-                  ]">
-                  <img :src="portrait.url" alt="Portrait" class="w-full h-full object-cover" />
-                </button>
-              </div>
-              <div class="flex items-center gap-2">
-                <input type="file" accept="image/*" @change="onPortraitUpload" class="block" />
-                <span class="text-xs text-white/60">Upload new portrait</span>
-              </div>
-            </div>
             <!-- Character Form Fields -->
             <CharacterForm :name="characterName" :portraitUrl="portraitPreview" :stats="characterStats"
               submitLabel="Join Session" @submit="onCharacterFormSubmit" @cancel="onCharacterFormCancel" />
           </div>
         </div>
 
-        <!-- Join Actions -->
-        <div class="flex gap-4 justify-center mt-8">
+        <!-- Join Actions: only show for premade flow (CharacterForm has its own submit for new characters) -->
+        <div v-if="characterType === 'premade'" class="flex gap-4 justify-center mt-8">
           <button type="submit" :disabled="!canJoin || isJoining"
             class="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-stone-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition">
             {{ isJoining ? 'Joining...' : 'Join Session' }}
@@ -135,6 +116,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCharacterStore } from '../../stores/character'
+import { useAssetStore } from '../../stores/asset'
 import { mapSession } from '../../stores/session'
 import type { GameSession, SessionCharacter } from '../../types/session'
 import type { CharacterStats } from '../../types/character'
@@ -145,6 +127,7 @@ import CharacterForm from '../../components/CharacterForm.vue'
 const route = useRoute()
 const router = useRouter()
 const characterStore = useCharacterStore()
+const assetStore = useAssetStore()
 const loading = ref(true)
 const error = ref<string | null>(null)
 const session = ref<GameSession | null>(null)
@@ -154,11 +137,10 @@ let notificationIdCounter = 1
 const characterType = ref<'new' | 'premade'>('new')
 const characterName = ref('')
 const selectedPremadeId = ref<string | null>(null)
-const selectedPortrait = ref<File | null>(null)
 const portraitPreview = ref<string | null>(null)
 const characterStats = ref<CharacterStats>({ STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 })
 const currentPlayers = ref<SessionCharacter[]>([])
-const portraitAssets = ref<{ id: string, url: string }[]>([])
+// portraitAssets handled inside CharacterForm; parent no longer needs a local copy
 
 const premadeCharacters = computed(() => {
   const usedPremadeCharacterNames = currentPlayers.value.filter(p => p.is_premade).map(p => p.name)
@@ -194,9 +176,8 @@ async function loadSession() {
     session.value = mapSession(sessionData)
     await loadCurrentPlayers(sessionId)
     await characterStore.fetchPremadeCharacters()
-    // Load portrait assets from asset store
-  const assets = characterStore.assetsByType && characterStore.assetsByType.portraits ? characterStore.assetsByType.portraits : [];
-  portraitAssets.value = Array.isArray(assets) ? assets.map(asset => ({ id: asset.id, url: asset.url })) : []
+  // Ensure asset store is populated so portrait picker shows uploaded portraits
+  await assetStore.fetchAssets()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load session'
   } finally {
@@ -215,35 +196,7 @@ async function loadCurrentPlayers(sessionId: string) {
   }
 }
 
-async function uploadPortrait() {
-  if (!selectedPortrait.value) return null
-  try {
-    const fileExt = selectedPortrait.value.name.split('.').pop()
-    const fileName = `${crypto.randomUUID()}.${fileExt}`
-    const { error: uploadError } = await supabase.storage
-      .from('portraits').upload(fileName, selectedPortrait.value)
-    if (uploadError) throw uploadError
-    const { data } = supabase.storage.from('portraits').getPublicUrl(fileName)
-    // Add to portraitAssets for immediate selection
-    portraitAssets.value.push({ id: fileName, url: data.publicUrl })
-    return data.publicUrl
-  } catch (error) {
-    console.error('Failed to upload portrait:', error)
-    return null
-  }
-}
-
-function selectPortrait(url: string) {
-  portraitPreview.value = url
-  selectedPortrait.value = null
-}
-function onPortraitUpload(e: Event) {
-  const files = (e.target as HTMLInputElement).files
-  if (files && files[0]) {
-    selectedPortrait.value = files[0]
-    portraitPreview.value = URL.createObjectURL(files[0])
-  }
-}
+// Portrait upload/selection moved into CharacterForm; parent no longer manages selected file
 
 async function joinWithPremadeCharacter(premadeCharId: string) {
   if (!session.value || isJoining.value) return
@@ -304,7 +257,7 @@ async function handleJoin() {
         hand_raised: false
       }
     } else {
-      const portraitUrl = selectedPortrait.value ? await uploadPortrait() : portraitPreview.value
+  const portraitUrl = portraitPreview.value
       characterData = {
         session_id: session.value.id,
         name: characterName.value.trim(),
