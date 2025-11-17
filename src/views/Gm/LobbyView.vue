@@ -31,8 +31,8 @@
       </div>
     </header>
 
-  <!-- Notifications -->
-  <div v-if="notifications.length > 0" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+    <!-- Notifications -->
+    <div v-if="notifications.length > 0" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
       <div v-for="notification in notifications" :key="notification.id" :class="[
         'flex items-center justify-between px-4 py-3 rounded-lg shadow-lg border-l-4',
         notification.type === 'success' ? 'border-green-500 bg-green-50 text-green-900' : '',
@@ -46,66 +46,66 @@
     </div>
 
     <!-- Make content area scrollable while keeping header fixed -->
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto pb-20">
 
       <div v-if="selectedSessionId === 'none'"
         class="flex flex-col items-center justify-center text-center text-stone-400 py-16">
-      <h3 class="text-xl font-bold mb-2">Player Join Disabled</h3>
-      <p>No active session - players cannot join at this time.</p>
+        <h3 class="text-xl font-bold mb-2">Player Join Disabled</h3>
+        <p>No active session - players cannot join at this time.</p>
       </div>
 
-  <div v-else-if="currentSession" class="flex flex-col px-6 pb-8">
-      <div class="relative rounded-lg overflow-hidden bg-stone-800 w-full h-56 mb-4">
-        <img v-if="currentSession.active_image_url" :src="currentSession.active_image_url" :alt="currentSession.name"
-          class="absolute inset-0 w-full h-full object-cover opacity-60" />
-        <div class="absolute bottom-0 left-0 right-0 p-6 bg-linear-to-t from-black/80 to-transparent text-white z-10">
-          <h1 class="text-2xl font-bold mb-1">{{ currentSession.name }}</h1>
-          <p v-if="currentSession.teaser_text" class="text-stone-300">{{ currentSession.teaser_text }}</p>
-        </div>
-      </div>
-      <GmSessionControl :current-session="currentSession" :player-count="currentPlayers.length" />
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-stone-900 border border-stone-700 rounded-lg p-6">
-          <h3 class="text-lg font-bold mb-4">Players in Session</h3>
-          <div v-if="currentPlayers.length > 0" class="flex flex-col gap-2">
-            <div v-for="player in currentPlayers" :key="player.id"
-              class="flex items-center gap-3 bg-stone-800 rounded p-2 border border-stone-700">
-              <img v-if="player.portrait_url" :src="player.portrait_url" :alt="player.name"
-                class="w-8 h-8 rounded-full object-cover" @error="handleImageError" @load="handleImageLoad" />
-              <div v-else
-                class="w-8 h-8 rounded-full bg-stone-700 flex items-center justify-center text-stone-400 font-bold">{{
-                player.name[0] }}</div>
-              <span class="flex-1">{{ player.name }}</span>
-              <button @click="kickPlayer(player.id)"
-                class="w-6 h-6 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition"
-                :disabled="sessionStore.state.loading" title="Remove player from session">✕</button>
-            </div>
-          </div>
-          <p v-else class="text-stone-400 italic text-center mt-2">No players have joined yet</p>
-        </div>
-        <div class="bg-stone-900 border border-stone-700 rounded-lg p-6">
-          <h3 class="text-lg font-bold mb-4">Player Join</h3>
-          <div class="flex flex-col gap-2">
-            <p class="text-stone-300">Players can join at:</p>
-            <div class="flex items-center gap-2">
-              <code class="flex-1 p-2 bg-stone-800 rounded border border-stone-700 text-xs">{{ joinUrl }}</code>
-              <button @click="copyJoinUrl"
-                class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition">Copy</button>
-            </div>
-            <div class="flex justify-center mt-2">
-              <div id="lobby-qr-code" class="rounded bg-white p-1"></div>
-            </div>
+      <div v-else-if="currentSession" class="flex flex-col px-6">
+        <div class="relative rounded-lg overflow-hidden bg-stone-800 w-full h-56 mb-4">
+          <img v-if="currentSession.active_image_url" :src="currentSession.active_image_url" :alt="currentSession.name"
+            class="absolute inset-0 w-full h-full object-cover opacity-60" />
+          <div class="absolute bottom-0 left-0 right-0 p-6 bg-linear-to-t from-black/80 to-transparent text-white z-10">
+            <h1 class="text-2xl font-bold mb-1">{{ currentSession.name }}</h1>
+            <p v-if="currentSession.teaser_text" class="text-stone-300">{{ currentSession.teaser_text }}</p>
           </div>
         </div>
+        <GmSessionControl :current-session="currentSession" :player-count="currentPlayers.length" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-stone-900 border border-stone-700 rounded-lg p-6">
+            <h3 class="text-lg font-bold mb-4">Players in Session</h3>
+            <div v-if="currentPlayers.length > 0" class="flex flex-col gap-2">
+              <div v-for="player in currentPlayers" :key="player.id"
+                class="flex items-center gap-3 bg-stone-800 rounded p-2 border border-stone-700">
+                <img v-if="player.portrait_url" :src="player.portrait_url" :alt="player.name"
+                  class="w-8 h-8 rounded-full object-cover" @error="handleImageError" @load="handleImageLoad" />
+                <div v-else
+                  class="w-8 h-8 rounded-full bg-stone-700 flex items-center justify-center text-stone-400 font-bold">{{
+                    player.name[0] }}</div>
+                <span class="flex-1">{{ player.name }}</span>
+                <button @click="kickPlayer(player.id)"
+                  class="w-6 h-6 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition"
+                  :disabled="sessionStore.state.loading" title="Remove player from session">✕</button>
+              </div>
+            </div>
+            <p v-else class="text-stone-400 italic text-center mt-2">No players have joined yet</p>
+          </div>
+          <div class="bg-stone-900 border border-stone-700 rounded-lg p-6">
+            <h3 class="text-lg font-bold mb-4">Player Join</h3>
+            <div class="flex flex-col gap-2">
+              <p class="text-stone-300">Players can join at:</p>
+              <div class="flex items-center gap-2">
+                <code class="flex-1 p-2 bg-stone-800 rounded border border-stone-700 text-xs">{{ joinUrl }}</code>
+                <button @click="copyJoinUrl"
+                  class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition">Copy</button>
+              </div>
+              <div class="flex justify-center mt-2">
+                <div id="lobby-qr-code" class="rounded bg-white p-1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div v-else class="flex flex-col items-center justify-center text-center text-stone-400 py-16">
-      <h3 class="text-xl font-bold mb-2">Select a session above to start</h3>
-      <p>Choose one of your created sessions to open the lobby for players.</p>
+      <div v-else class="flex flex-col items-center justify-center text-center text-stone-400 py-16">
+        <h3 class="text-xl font-bold mb-2">Select a session above to start</h3>
+        <p>Choose one of your created sessions to open the lobby for players.</p>
+      </div>
     </div>
-    </div>
-    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
