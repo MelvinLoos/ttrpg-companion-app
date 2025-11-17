@@ -39,11 +39,11 @@
       <div v-else-if="store.state.error" class="text-center py-12 bg-white/5 rounded-lg border border-dashed border-white/20">
         <p>{{ store.state.error }}</p>
       </div>
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 overflow-y-auto">
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 overflow-y-auto max-h-140">
         <div 
           v-for="(asset, idx) in filteredAssets" 
           :key="asset.id" 
-          class="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden transition duration-300 hover:bg-white/8 hover:border-white/20 hover:-translate-y-0.5 hover:shadow-xl"
+          class="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden transition duration-300 hover:bg-white/8 hover:border-white/20 hover:-translate-y-0.5 hover:shadow-xl mb-6"
         >
           <AssetPreview 
             :asset="asset" 

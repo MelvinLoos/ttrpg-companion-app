@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-full min-h-0 bg-white/5 border border-white/10 rounded-lg p-3 my-2 h-full max-h-[60vh] overflow-hidden">
+  <div class="flex flex-col w-full min-h-0 bg-white/5 border border-white/10 rounded-lg p-3 my-2 h-full">
     <!-- Status Blocks Row: Session Block + Combat Block side by side -->
     <div class="flex flex-row gap-4 w-full mb-4">
       <!-- Session Block -->

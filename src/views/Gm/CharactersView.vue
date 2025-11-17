@@ -56,7 +56,7 @@
 
     <!-- Create/Edit character dialog -->
     <div v-if="showCreateDialog" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-      <div class="bg-stone-800 rounded-xl w-full max-w-md border border-stone-700 shadow-2xl p-8">
+      <div class="bg-stone-800 rounded-xl w-full max-w-md border border-stone-700 shadow-2xl p-8 h-svh">
         <h3 class="text-2xl font-bold text-white mb-6">{{ editingCharacter ? 'Edit Character' : 'Create Character' }}
         </h3>
         <form @submit.prevent="handleSubmit" class="space-y-6">
@@ -66,28 +66,53 @@
               class="w-full p-3 bg-stone-700 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
               placeholder="Enter character name" />
           </div>
-          <div>
-            <label for="character-portrait" class="block text-sm font-semibold text-stone-300 mb-2">Portrait
-              Image</label>
-            <div class="flex flex-col gap-4 items-center">
-              <img v-if="portraitPreview" :src="portraitPreview" alt="Portrait preview"
-                class="w-32 h-32 rounded-lg object-cover bg-stone-900" />
-              <img v-else-if="formData.portrait_url" :src="formData.portrait_url" alt="Current portrait"
-                class="w-32 h-32 rounded-lg object-cover bg-stone-900" />
-              <div v-else
-                class="w-32 h-32 rounded-lg bg-stone-900 flex items-center justify-center text-stone-500 text-sm">No
-                portrait selected</div>
-              <input id="character-portrait" type="file" accept="image/*" @change="handlePortraitChange" class="mt-2" />
+
+          <!-- Tabs -->
+          <div class="mb-4">
+            <div class="flex gap-2 border-b border-stone-700 mb-2">
+              <button type="button" @click="activeTab = 'appearance'" :class="['px-4 py-2 rounded-t-lg font-semibold', activeTab === 'appearance' ? 'bg-stone-700 text-white' : 'bg-stone-800 text-stone-400']">Appearance</button>
+              <button type="button" @click="activeTab = 'stats'" :class="['px-4 py-2 rounded-t-lg font-semibold', activeTab === 'stats' ? 'bg-stone-700 text-white' : 'bg-stone-800 text-stone-400']">Stats</button>
             </div>
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-stone-300 mb-2">Character Stats</label>
-            <div class="grid grid-cols-3 gap-4">
-              <div v-for="stat in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']" :key="stat" class="flex flex-col gap-1">
-                <label :for="'stat-' + stat" class="text-xs text-stone-400">{{ stat }}</label>
-                <input :id="'stat-' + stat" v-model.number="stats[stat as keyof typeof stats]" type="number" min="0"
-                  class="w-full p-2 bg-stone-700 border border-stone-600 rounded text-white text-center"
-                  placeholder="10" />
+            <div v-if="activeTab === 'appearance'">
+              <label class="block text-sm font-semibold text-stone-300 mb-2">Portrait Image</label>
+              <div class="flex flex-col gap-4 items-center">
+                <img v-if="portraitPreview" :src="portraitPreview || ''" alt="Portrait preview"
+                  class="w-32 h-32 rounded-lg object-cover bg-stone-900" />
+                <img v-else-if="formData.portrait_url" :src="formData.portrait_url || ''" alt="Current portrait"
+                  class="w-32 h-32 rounded-lg object-cover bg-stone-900" />
+                <div v-else class="w-32 h-32 rounded-lg bg-stone-900 flex items-center justify-center text-stone-500 text-sm">No portrait selected</div>
+
+                <!-- Portrait Picker Grid -->
+                <div v-if="portraitAssets.length > 0" class="portrait-picker-grid grid grid-cols-3 gap-2 mt-2 overflow-y-auto" style="max-height: 240px;">
+                  <button v-for="portrait in portraitAssets" :key="portrait.id"
+                    type="button"
+                    @click="selectPortrait(portrait)"
+                    :class="['w-20 h-20 rounded-lg overflow-hidden border-2 transition',
+                      formData.portrait_url === portrait.public_url ? 'border-blue-500 ring-2 ring-blue-400' : 'border-stone-700 hover:border-blue-400']"
+                    title="Select portrait">
+                    <img :src="portrait.public_url || ''" alt="Portrait" class="w-full h-full object-cover" />
+                  </button>
+                </div>
+
+                <!-- Portrait Upload (drag-and-drop) -->
+                <div class="w-full mt-4">
+                  <AssetUploader
+                    accept="image/*"
+                    hint="Upload a new portrait (drag & drop or browse)"
+                    @upload="handlePortraitUpload"
+                  />
+                </div>
+              </div>
+            </div>
+            <div v-else-if="activeTab === 'stats'">
+              <label class="block text-sm font-semibold text-stone-300 mb-2">Character Stats</label>
+              <div class="grid grid-cols-3 gap-4">
+                <div v-for="stat in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']" :key="stat" class="flex flex-col gap-1">
+                  <label :for="'stat-' + stat" class="text-xs text-stone-400">{{ stat }}</label>
+                  <input :id="'stat-' + stat" v-model.number="stats[stat as keyof typeof stats]" type="number" min="0"
+                    class="w-full p-2 bg-stone-700 border border-stone-600 rounded text-white text-center"
+                    placeholder="10" />
+                </div>
               </div>
             </div>
           </div>
@@ -105,12 +130,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useCharacterStore } from '../../stores/character'
 import type { PremadeCharacter } from '../../types/character'
+import { useAssetStore } from '../../stores/asset'
+import type { Asset } from '../../stores/asset'
+import AssetUploader from '../../components/AssetUploader.vue'
 
 // Store setup
 const store = useCharacterStore()
+const assetStore = useAssetStore()
+// Portrait assets (existing)
+const portraitAssets = computed(() => assetStore.assetsByType.portraits)
+// Portrait selection logic
+function selectPortrait(portrait: Asset) {
+  formData.value.portrait_url = portrait.public_url ?? null
+  portraitPreview.value = null
+  selectedPortrait.value = null
+}
+
+// Portrait upload logic
+async function handlePortraitUpload(file: File) {
+  // Upload to asset store as portrait
+  const asset = await assetStore.uploadAsset(file, 'portrait', file.name)
+  if (asset && asset.public_url) {
+    formData.value.portrait_url = asset.public_url ?? null
+    portraitPreview.value = asset.public_url ?? null
+    selectedPortrait.value = null
+  }
+}
 
 // Component state
 const showCreateDialog = ref(false)
@@ -119,6 +167,8 @@ const formData = ref({
   name: '',
   portrait_url: null as string | null
 })
+// Tab state
+const activeTab = ref('appearance')
 const stats = ref({
   STR: 10,
   DEX: 10,
@@ -156,6 +206,7 @@ function editCharacter(character: PremadeCharacter) {
       CHA: 10
     }
   }
+  assetStore.fetchAssets()
   showCreateDialog.value = true
 }
 
@@ -176,17 +227,7 @@ function closeDialog() {
   }
   selectedPortrait.value = null
   portraitPreview.value = null
-}
-
-function handlePortraitChange(event: Event) {
-  const input = event.target as HTMLInputElement
-  if (input.files?.length) {
-    const file = input.files[0]
-    if (file) {
-      selectedPortrait.value = file
-      portraitPreview.value = URL.createObjectURL(file)
-    }
-  }
+  assetStore.fetchAssets()
 }
 
 async function handleSubmit() {

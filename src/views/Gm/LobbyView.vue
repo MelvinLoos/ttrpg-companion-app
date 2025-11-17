@@ -51,7 +51,7 @@
       <p>No active session - players cannot join at this time.</p>
     </div>
 
-    <div v-else-if="currentSession" class="flex flex-col px-6 pb-8">
+  <div v-else-if="currentSession" class="flex flex-col px-6 pb-8">
       <div class="relative rounded-lg overflow-hidden bg-stone-800 w-full h-56 mb-4">
         <img v-if="currentSession.active_image_url" :src="currentSession.active_image_url" :alt="currentSession.name"
           class="absolute inset-0 w-full h-full object-cover opacity-60" />
@@ -64,7 +64,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-stone-900 border border-stone-700 rounded-lg p-6">
           <h3 class="text-lg font-bold mb-4">Players in Session</h3>
-          <div v-if="currentPlayers.length > 0" class="flex flex-col gap-2 max-h-48 overflow-y-auto">
+          <div v-if="currentPlayers.length > 0" class="flex flex-col gap-2">
             <div v-for="player in currentPlayers" :key="player.id"
               class="flex items-center gap-3 bg-stone-800 rounded p-2 border border-stone-700">
               <img v-if="player.portrait_url" :src="player.portrait_url" :alt="player.name"
