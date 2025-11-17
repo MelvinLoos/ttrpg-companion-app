@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-stone-900 text-stone-100 flex flex-col overflow-y-auto">
+  <div class="h-screen bg-stone-900 text-stone-100 flex flex-col">
     <header class="bg-stone-900 text-stone-100 border-b p-6 flex flex-col gap-4">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -31,8 +31,8 @@
       </div>
     </header>
 
-    <!-- Notifications -->
-    <div v-if="notifications.length > 0" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+  <!-- Notifications -->
+  <div v-if="notifications.length > 0" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
       <div v-for="notification in notifications" :key="notification.id" :class="[
         'flex items-center justify-between px-4 py-3 rounded-lg shadow-lg border-l-4',
         notification.type === 'success' ? 'border-green-500 bg-green-50 text-green-900' : '',
@@ -45,11 +45,14 @@
       </div>
     </div>
 
-    <div v-if="selectedSessionId === 'none'"
-      class="flex flex-col items-center justify-center text-center text-stone-400 py-16">
+    <!-- Make content area scrollable while keeping header fixed -->
+    <div class="flex-1 overflow-y-auto">
+
+      <div v-if="selectedSessionId === 'none'"
+        class="flex flex-col items-center justify-center text-center text-stone-400 py-16">
       <h3 class="text-xl font-bold mb-2">Player Join Disabled</h3>
       <p>No active session - players cannot join at this time.</p>
-    </div>
+      </div>
 
   <div v-else-if="currentSession" class="flex flex-col px-6 pb-8">
       <div class="relative rounded-lg overflow-hidden bg-stone-800 w-full h-56 mb-4">
@@ -101,7 +104,8 @@
       <h3 class="text-xl font-bold mb-2">Select a session above to start</h3>
       <p>Choose one of your created sessions to open the lobby for players.</p>
     </div>
-  </div>
+    </div>
+    </div>
 </template>
 
 <script setup lang="ts">
