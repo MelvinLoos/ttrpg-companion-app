@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen w-full h-full overflow-y-auto p-1">
+  <div class="min-h-screen w-full h-full p-1">
     <header class="assets-header bg-stone-900 text-stone-100 border-b p-6">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -39,9 +39,9 @@
       <div v-else-if="store.state.error" class="text-center py-12 bg-white/5 rounded-lg border border-dashed border-white/20">
         <p>{{ store.state.error }}</p>
       </div>
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 overflow-y-auto">
         <div 
-          v-for="asset in filteredAssets" 
+          v-for="(asset, idx) in filteredAssets" 
           :key="asset.id" 
           class="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden transition duration-300 hover:bg-white/8 hover:border-white/20 hover:-translate-y-0.5 hover:shadow-xl"
         >
@@ -49,6 +49,8 @@
             :asset="asset" 
             :show-info="true"
             :show-modal="true"
+            :assets-list="filteredAssets"
+            :asset-index="idx"
           />
           <div class="absolute top-3 right-3 z-10">
             <button 

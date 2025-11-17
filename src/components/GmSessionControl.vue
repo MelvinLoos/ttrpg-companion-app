@@ -1,149 +1,156 @@
 <template>
-  <div class="gm-session-control">
-    <!-- Main Status and Actions Row -->
-    <div class="status-actions-row">
-      <!-- Left side: Status Information -->
-      <div class="status-section">
-        <!-- Session Status -->
-        <div class="session-status">
-          <h3>Session Status</h3>
-          <div class="status-indicator" :class="statusClass">
-            <span class="status-dot"></span>
-            <span class="status-text">{{ statusText }}</span>
-          </div>
+  <div class="flex flex-col w-full min-h-0 bg-white/5 border border-white/10 rounded-lg p-3 my-2 h-full max-h-[60vh] overflow-hidden">
+    <!-- Status Blocks Row: Session Block + Combat Block side by side -->
+    <div class="flex flex-row gap-4 w-full mb-4">
+      <!-- Session Block -->
+      <div class="flex-1 min-w-0 flex flex-col bg-white/5 border border-white/10 rounded-lg p-4">
+        <h3 class="text-lg font-bold text-stone-100 mb-2">Session Status</h3>
+        <div :class="['flex items-center gap-2 mb-4', statusClass]">
+          <span class="w-3 h-3 rounded-full inline-block"
+                :class="{
+                  'bg-yellow-400': statusClass === 'status-lobby',
+                  'bg-green-500': statusClass === 'status-active',
+                  'bg-orange-400': statusClass === 'status-paused',
+                  'bg-gray-500': statusClass === 'status-unknown'
+                }"
+          ></span>
+          <span class="font-semibold text-stone-200"
+                :class="{
+                  'text-yellow-400': statusClass === 'status-lobby',
+                  'text-green-500': statusClass === 'status-active',
+                  'text-orange-400': statusClass === 'status-paused',
+                  'text-gray-500': statusClass === 'status-unknown'
+                }"
+          >{{ statusText }}</span>
         </div>
-
-        <!-- Active Combat Status (when active) -->
-        <div v-if="activeCombat" class="combat-status-inline">
-          <h3>Active Combat</h3>
-          <div class="combat-info-inline">
-            <div class="combat-detail">
-              <span class="combat-label">Encounter:</span>
-              <span class="combat-value">{{ activeCombat.encounter?.name || 'Unknown Encounter' }}</span>
-            </div>
-            <div class="combat-detail">
-              <span class="combat-label">Round:</span>
-              <span class="combat-value">{{ activeCombat.round_number || 1 }}</span>
-            </div>
-            <div class="combat-detail">
-              <span class="combat-label">Participants:</span>
-              <span class="combat-value">{{ combatStore.participants.length }}</span>
-            </div>
-            <div class="combat-detail" v-if="combatStore.currentParticipant">
-              <span class="combat-label">Current Turn:</span>
-              <span class="combat-value">{{ combatStore.currentParticipant.name }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right side: Action Buttons -->
-      <div class="actions-section">
-        <!-- Combat Actions (when in combat) -->
-        <div v-if="activeCombat" class="combat-actions-inline">
-          <button 
-            @click="nextTurn"
-            :disabled="loading || combatStore.participants.length === 0"
-            class="next-turn-btn"
-          >
-            {{ loading ? 'Processing...' : 'Next Turn' }}
-          </button>
-          <button 
-            @click="endCurrentCombat"
-            :disabled="loading"
-            class="end-combat-btn"
-          >
-            {{ loading ? 'Ending...' : 'End Combat' }}
-          </button>
-        </div>
-
-        <!-- Session Actions -->
-        <div class="session-actions">
+        <!-- Session Actions below status, buttons inline -->
+        <div class="flex flex-row flex-wrap items-center gap-2">
           <button 
             v-if="currentSession?.state === 'LOBBY'"
             @click="startSession"
             :disabled="!canStartSession || loading"
-            class="start-btn"
+            class="start-btn bg-green-600 hover:bg-green-700 text-white rounded px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {{ loading ? 'Starting...' : 'Start Session' }}
           </button>
-          
           <template v-else-if="currentSession?.state === 'IN_PLAY'">
             <button 
               v-if="!activeCombat"
               @click="showStartCombatModal = true"
               :disabled="loading"
-              class="start-combat-btn"
+              class="start-combat-btn bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Start Combat
             </button>
             <button 
               @click="pauseSession"
               :disabled="loading"
-              class="pause-btn"
+              class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white rounded px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {{ loading ? 'Pausing...' : 'Pause Session' }}
             </button>
             <button 
               @click="endSession"
               :disabled="loading"
-              class="end-btn"
+              class="end-btn bg-red-500 hover:bg-red-600 text-white rounded px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {{ loading ? 'Ending...' : 'End Session' }}
             </button>
           </template>
-          
           <button 
             v-else-if="currentSession?.state === 'PAUSED'"
             @click="resumeSession"
             :disabled="loading"
-            class="resume-btn"
+            class="resume-btn bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {{ loading ? 'Resuming...' : 'Resume Session' }}
           </button>
         </div>
       </div>
+      <!-- Combat Block -->
+      <div class="flex-1 min-w-0 flex flex-row bg-red-500/10 border border-red-500/30 rounded-lg p-4 items-start gap-6" v-if="activeCombat">
+        <!-- Combat Status -->
+        <div class="flex-1 min-w-0 flex flex-col">
+          <h3 class="text-lg font-bold text-red-500 mb-3">Active Combat</h3>
+          <div class="grid grid-cols-2 gap-2 mt-2 mb-0">
+            <div class="combat-detail flex flex-col">
+              <span class="combat-label text-stone-400 text-xs">Encounter:</span>
+              <span class="combat-value text-stone-100 text-sm font-semibold">{{ activeCombat.encounter?.name || 'Unknown Encounter' }}</span>
+            </div>
+            <div class="combat-detail flex flex-col">
+              <span class="combat-label text-stone-400 text-xs">Round:</span>
+              <span class="combat-value text-stone-100 text-sm font-semibold">{{ activeCombat.round_number || 1 }}</span>
+            </div>
+            <div class="combat-detail flex flex-col">
+              <span class="combat-label text-stone-400 text-xs">Participants:</span>
+              <span class="combat-value text-stone-100 text-sm font-semibold">{{ combatStore.participants.length }}</span>
+            </div>
+            <div class="combat-detail flex flex-col" v-if="combatStore.currentParticipant">
+              <span class="combat-label text-stone-400 text-xs">Current Turn:</span>
+              <span class="combat-value text-stone-100 text-sm font-semibold">{{ combatStore.currentParticipant.name }}</span>
+            </div>
+          </div>
+        </div>
+        <!-- Combat Actions on the side -->
+        <div class="flex flex-col items-center gap-2 pt-6">
+          <button 
+            @click="nextTurn"
+            :disabled="loading || combatStore.participants.length === 0"
+            class="next-turn-btn bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {{ loading ? 'Processing...' : 'Next Turn' }}
+          </button>
+          <button 
+            @click="endCurrentCombat"
+            :disabled="loading"
+            class="end-combat-btn bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {{ loading ? 'Ending...' : 'End Combat' }}
+          </button>
+        </div>
+      </div>
     </div>
 
+
     <!-- Combat Diagnostics (shown when there are issues) -->
-    <div v-if="showDiagnostics && combatDiagnostics" class="combat-diagnostics">
-      <h3>Combat State Issues Detected</h3>
-      <div class="diagnostic-info">
-        <p class="diagnostic-message">
+    <div v-if="showDiagnostics && combatDiagnostics" class="bg-amber-100/10 border border-amber-300/30 rounded-lg p-4 mb-4">
+      <h3 class="text-lg font-bold text-amber-500 mb-2">Combat State Issues Detected</h3>
+      <div class="mb-4">
+        <p class="text-stone-100 text-sm mb-2">
           Found {{ combatDiagnostics.activeCombats }} active combat(s) in the database, 
           but the UI shows inconsistent state.
         </p>
-        <div v-if="combatDiagnostics.hasInconsistentState" class="diagnostic-details">
-          <p class="text-sm text-yellow-300">
+        <div v-if="combatDiagnostics.hasInconsistentState" class="bg-amber-100/5 rounded px-3 py-2">
+          <p class="text-xs text-yellow-300">
             Some active combats have no participants, which indicates corrupted data.
           </p>
         </div>
       </div>
-      <div class="diagnostic-actions">
+      <div class="flex gap-2 flex-wrap justify-center">
         <button 
           @click="debugCombatState"
           :disabled="loading"
-          class="cleanup-btn"
+          class="bg-green-600 hover:bg-green-700 text-white rounded px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {{ loading ? 'Checking...' : 'Debug Combat State' }}
         </button>
         <button 
           @click="cleanupInvalidState"
           :disabled="loading"
-          class="cleanup-btn"
+          class="bg-green-600 hover:bg-green-700 text-white rounded px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {{ loading ? 'Cleaning...' : 'Auto-Fix Invalid State' }}
         </button>
         <button 
           @click="forceEndAllCombats"
           :disabled="loading"
-          class="force-end-btn"
+          class="bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {{ loading ? 'Ending...' : 'Force End All Combats' }}
         </button>
         <button 
           @click="hideDiagnostics"
-          class="hide-diagnostics-btn"
+          class="bg-stone-500 hover:bg-stone-600 text-white rounded px-4 py-2 font-semibold transition"
         >
           Hide
         </button>
@@ -151,26 +158,28 @@
     </div>
 
     <!-- Asset Gallery for pushing images to player screen -->
-    <GmAssetGallery 
-      v-if="currentSession"
-      :session-id="currentSession.id"
-      :current-image-asset-id="currentSession.current_image_asset_id"
-      @image-pushed="handleImagePushed"
-    />
+  <div class="flex-1 min-h-0">
+      <GmAssetGallery 
+        v-if="currentSession"
+        :session-id="currentSession.id"
+        :current-image-asset-id="currentSession.current_image_asset_id"
+        @image-pushed="handleImagePushed"
+      />
+    </div>
   </div>
 
   <!-- Start Combat Modal - Full screen overlay -->
   <div v-if="showStartCombatModal" 
-       class="modal-overlay"
+  class="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-9999"
        @click.self="closeStartCombatModal">
-    <div class="modal-content">
-      <div class="modal-inner">
+    <div class="bg-gray-700 rounded-lg w-full max-w-lg border border-gray-600 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
         <!-- Modal Header -->
-        <div class="flex justify-between items-center mb-6">
+  <div class="flex justify-between items-center mb-6">
           <h2 class="text-xl font-bold text-white">Start Combat</h2>
           <button
             @click="closeStartCombatModal"
-            class="modal-close-btn"
+            class="flex items-center justify-center w-8 h-8 rounded-md text-gray-400 bg-transparent border-none cursor-pointer transition hover:text-white hover:bg-gray-700"
             aria-label="Close modal"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,22 +207,22 @@
         
         <div v-else class="space-y-4">
           <p class="text-sm text-gray-300">Select an encounter to start combat:</p>
-          
           <div class="max-h-96 overflow-y-auto space-y-3">
             <div
               v-for="encounter in combatStore.encounters"
               :key="encounter.id"
               @click="selectedEncounterId = encounter.id"
               :class="[
-                'encounter-card',
-                selectedEncounterId === encounter.id ? 'encounter-selected' : 'encounter-unselected'
+                'bg-gray-700 rounded-lg p-4 cursor-pointer border-2 transition relative',
+                selectedEncounterId === encounter.id ? 'border-blue-500 bg-blue-700 shadow-[0_0_0_3px_rgba(59,130,246,0.1)]' : 'border-transparent',
+                selectedEncounterId === encounter.id ? 'hover:bg-blue-800' : 'hover:bg-gray-600'
               ]"
             >
               <div class="flex justify-between items-start">
                 <div class="flex-1">
                   <div class="flex items-center mb-1">
                     <h4 class="font-semibold text-white mr-2">{{ encounter.name }}</h4>
-                    <svg v-if="selectedEncounterId === encounter.id" class="checkmark-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <svg v-if="selectedEncounterId === encounter.id" class="w-4 h-4 text-blue-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                     </svg>
                   </div>
@@ -230,12 +239,11 @@
               </div>
             </div>
           </div>
-
           <!-- Modal Actions -->
-          <div class="modal-actions">
+          <div class="flex gap-4 mt-12 pt-6 border-t border-gray-700">
             <button
               @click="closeStartCombatModal"
-              class="modal-btn modal-btn-cancel"
+              class="flex-1 bg-gray-600 text-white rounded-lg py-3 px-4 font-semibold text-sm transition hover:bg-gray-700"
             >
               Cancel
             </button>
@@ -243,7 +251,7 @@
               v-if="selectedEncounterId"
               @click="startCombat"
               :disabled="startingCombat"
-              class="modal-btn modal-btn-start"
+              class="flex-2 bg-red-600 text-white rounded-lg py-3 px-6 font-semibold text-sm transition hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
             >
               <span v-if="startingCombat">
                 <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -666,516 +674,4 @@ watch(() => props.currentSession?.id, async (sessionId) => {
 </script>
 
 <style scoped>
-.gm-session-control {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  margin: 0.5rem 0;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  max-height: 60vh;
-  overflow: hidden;
-}
-
-/* Status and Actions Row Layout */
-.status-actions-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-shrink: 0;
-}
-
-.status-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.actions-section {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: flex-end;
-}
-
-/* Session Status Styles */
-.session-status {
-  margin-bottom: 0;
-}
-
-.combat-status-inline {
-  margin-bottom: 0;
-}
-
-.combat-info-inline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.combat-detail {
-  display: flex;
-  gap: 0.5rem;
-  align-items: baseline;
-}
-
-.combat-actions-inline {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.session-status h3,
-.combat-status-inline h3 {
-  margin: 0 0 0.5rem;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
-}
-
-.status-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  transition: background-color 0.2s;
-}
-
-.status-text {
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-/* Status-specific styling */
-.status-lobby .status-dot {
-  background-color: #fbbf24; /* yellow */
-}
-
-.status-lobby .status-text {
-  color: #fbbf24;
-}
-
-.status-active .status-dot {
-  background-color: #10b981; /* green */
-}
-
-.status-active .status-text {
-  color: #10b981;
-}
-
-.status-paused .status-dot {
-  background-color: #f59e0b; /* orange */
-}
-
-.status-paused .status-text {
-  color: #f59e0b;
-}
-
-.status-unknown .status-dot {
-  background-color: #6b7280; /* gray */
-}
-
-.status-unknown .status-text {
-  color: #6b7280;
-}
-
-.session-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.session-actions button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  border: none;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 120px;
-}
-
-.start-btn {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-}
-
-.start-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669, #047857);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-}
-
-.pause-btn {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
-}
-
-.pause-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d97706, #b45309);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-}
-
-.end-btn {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-}
-
-.end-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  transform: translateY(-1px);
-}
-
-.resume-btn {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
-}
-
-.resume-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  transform: translateY(-1px);
-}
-
-.start-combat-btn {
-  background: linear-gradient(135deg, #dc2626, #991b1b);
-  color: white;
-}
-
-.start-combat-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #991b1b, #7f1d1d);
-  transform: translateY(-1px);
-}
-
-.session-actions button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.session-actions button:disabled:hover {
-  background: revert;
-  transform: none;
-}
-
-/* Modal styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  z-index: 9999;
-}
-
-.modal-content {
-  background-color: #374151; /* gray-700 */
-  border-radius: 0.5rem;
-  width: 100%;
-  max-width: 32rem; /* max-w-lg */
-  border: 1px solid #4b5563; /* gray-600 */
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-inner {
-  padding: 1.5rem;
-}
-
-/* Modal close button */
-.modal-close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.375rem;
-  color: #9ca3af; /* gray-400 */
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.modal-close-btn:hover {
-  color: #ffffff;
-  background-color: #374151; /* gray-700 */
-}
-
-/* Encounter selection cards */
-.encounter-card {
-  background-color: #374151; /* gray-700 */
-  border-radius: 0.5rem;
-  padding: 1rem;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 0.2s;
-  position: relative;
-}
-
-.encounter-card:hover {
-  background-color: #4b5563; /* gray-600 */
-  border-color: #6b7280; /* gray-500 */
-}
-
-.encounter-unselected {
-  border-color: transparent;
-}
-
-.encounter-selected {
-  border-color: #3b82f6; /* blue-500 */
-  background-color: #1e40af; /* blue-700 */
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.encounter-selected:hover {
-  background-color: #1d4ed8; /* blue-800 */
-}
-
-/* Checkmark icon - ensure proper sizing */
-.checkmark-icon {
-  width: 1rem; /* 16px */
-  height: 1rem; /* 16px */
-  color: #60a5fa; /* blue-400 */
-  flex-shrink: 0;
-}
-
-/* Modal actions - custom CSS since Tailwind utilities need proper import */
-.modal-actions {
-  display: flex;
-  gap: 1rem; /* 16px gap between buttons */
-  margin-top: 3rem; /* 48px top margin */
-  padding-top: 1.5rem; /* 24px padding above border */
-  border-top: 1px solid #374151; /* gray-700 border */
-}
-
-.modal-btn {
-  padding: 0.75rem 1rem; /* py-3 px-4 */
-  border-radius: 0.5rem;
-  border: none;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.modal-btn-cancel {
-  flex: 1;
-  background-color: #4b5563; /* gray-600 */
-  color: white;
-}
-
-.modal-btn-cancel:hover {
-  background-color: #374151; /* gray-700 */
-}
-
-.modal-btn-start {
-  flex: 2;
-  background-color: #dc2626; /* red-600 */
-  color: white;
-  padding: 0.75rem 1.5rem; /* py-3 px-6 */
-}
-
-.modal-btn-start:hover:not(:disabled) {
-  background-color: #b91c1c; /* red-700 */
-}
-
-.modal-btn-start:disabled {
-  background-color: #4b5563; /* gray-600 */
-  cursor: not-allowed;
-}
-
-/* Combat Status Styles */
-.combat-status {
-  background: rgba(239, 68, 68, 0.1); /* red background with low opacity */
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1rem;
-}
-
-.combat-status h3 {
-  color: #ef4444; /* red-500 */
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-}
-
-.combat-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.combat-info > div {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.25rem 0;
-}
-
-.combat-label {
-  color: #d1d5db; /* gray-300 */
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.combat-value {
-  color: #f3f4f6; /* gray-100 */
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.combat-actions {
-  display: flex;
-  justify-content: center;
-}
-
-.end-combat-btn {
-  background-color: #dc2626; /* red-600 */
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.end-combat-btn:hover:not(:disabled) {
-  background-color: #b91c1c; /* red-700 */
-}
-
-.end-combat-btn:disabled {
-  background-color: #6b7280; /* gray-500 */
-  cursor: not-allowed;
-}
-
-.next-turn-btn {
-  background-color: #3b82f6; /* blue-600 */
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.next-turn-btn:hover:not(:disabled) {
-  background-color: #2563eb; /* blue-700 */
-}
-
-.next-turn-btn:disabled {
-  background-color: #6b7280; /* gray-500 */
-  cursor: not-allowed;
-}
-
-/* Combat Diagnostics Styles */
-.combat-diagnostics {
-  background: rgba(245, 158, 11, 0.1); /* amber background with low opacity */
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1rem;
-}
-
-.combat-diagnostics h3 {
-  color: #f59e0b; /* amber-500 */
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-}
-
-.diagnostic-info {
-  margin-bottom: 1rem;
-}
-
-.diagnostic-message {
-  color: #f3f4f6; /* gray-100 */
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-}
-
-.diagnostic-details {
-  background: rgba(245, 158, 11, 0.05);
-  border-radius: 0.375rem;
-  padding: 0.75rem;
-}
-
-.diagnostic-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.cleanup-btn, .force-end-btn, .hide-diagnostics-btn {
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.cleanup-btn {
-  background-color: #10b981; /* green-600 */
-  color: white;
-}
-
-.cleanup-btn:hover:not(:disabled) {
-  background-color: #047857; /* green-700 */
-}
-
-.force-end-btn {
-  background-color: #dc2626; /* red-600 */
-  color: white;
-}
-
-.force-end-btn:hover:not(:disabled) {
-  background-color: #b91c1c; /* red-700 */
-}
-
-.hide-diagnostics-btn {
-  background-color: #6b7280; /* gray-500 */
-  color: white;
-}
-
-.hide-diagnostics-btn:hover {
-  background-color: #4b5563; /* gray-600 */
-}
-
-.cleanup-btn:disabled, .force-end-btn:disabled {
-  background-color: #6b7280; /* gray-500 */
-  cursor: not-allowed;
-}
 </style>
