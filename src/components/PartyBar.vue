@@ -26,7 +26,7 @@
         </div>
 
         <!-- QR Code for joining -->
-        <div class="character-card qr-card" v-if="!hideQr">
+        <div class="character-card" v-if="!hideQr">
           <div class="qr-code-container">
             <canvas ref="qrCodeCanvas" class="qr-code"></canvas>
           </div>
@@ -133,9 +133,7 @@ async function generateQRCode() {
   
   try {
     const joinUrl = `${window.location.origin}/join/${props.sessionId}`
-    const size = props.square ? 80 : 92
     await QRCode.toCanvas(qrCodeCanvas.value, joinUrl, {
-      width: size,
       margin: 0,
       color: {
         dark: '#000000',
@@ -215,22 +213,16 @@ watch(() => props.hideQr, async (newHideQr, oldHideQr) => {
 .character-card {
   background: rgba(0, 0, 0, 0.6);
   border-radius: 1rem;
-  padding: 1rem;
   text-align: center;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
 }
 
-.qr-card {
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
 .qr-code-container {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 1rem;
+  width: 95px;
+  height: 95px;
+  margin: 0 auto 0.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -386,20 +378,6 @@ watch(() => props.hideQr, async (newHideQr, oldHideQr) => {
 .party-bar.square .hand-raised {
   font-size: 0.6rem;
   margin-top: 0.05rem;
-}
-
-.party-bar.square .qr-code-container {
-  width: 85px;
-  height: 85px;
-  margin: 0 auto 0.05rem;
-  padding: 0.125rem;
-}
-
-.party-bar.square .qr-card .character-info h4 {
-  font-size: 0.65rem;
-  margin: 0;
-  line-height: 1;
-  padding: 0;
 }
 
 /* Responsive design */

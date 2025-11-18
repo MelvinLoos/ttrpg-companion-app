@@ -398,4 +398,28 @@ onUnmounted(() => {
     width: 80px;
   }
 }
+
+/* Themed scrollbar specifically for this component to ensure high precedence */
+.public-combat-tracker::-webkit-scrollbar {
+  width: 12px;
+}
+.public-combat-tracker::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.03);
+  border-radius: 999px;
+}
+.public-combat-tracker::-webkit-scrollbar-thumb {
+  background: rgba(59,130,246,0.36);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+.public-combat-tracker::-webkit-scrollbar-thumb:hover {
+  background: rgba(59,130,246,0.6);
+}
+
+/* Firefox fallback */
+.public-combat-tracker {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59,130,246,0.36) rgba(255,255,255,0.03);
+}
 </style>

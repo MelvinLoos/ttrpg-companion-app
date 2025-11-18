@@ -80,3 +80,96 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Themed scrollbar styling for scrollable containers */
+:root {
+  --scroll-track: rgba(255,255,255,0.03);
+  --scroll-thumb: rgba(59,130,246,0.36); /* theme blue */
+  --scroll-thumb-hover: rgba(59,130,246,0.6);
+  --scroll-thumb-size: 10px;
+}
+
+/* Apply to common overflow utility classes and named containers */
+.overflow-y-auto,
+.overflow-y-scroll,
+.scrollable,
+.participants-container,
+.public-combat-tracker,
+.combat-sidebar,
+.asset-grid,
+.in-play-main,
+.content-overlay {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+/* WebKit browsers */
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-y-scroll::-webkit-scrollbar,
+.scrollable::-webkit-scrollbar,
+.participants-container::-webkit-scrollbar,
+.public-combat-tracker::-webkit-scrollbar,
+.combat-sidebar::-webkit-scrollbar,
+.asset-grid::-webkit-scrollbar,
+.in-play-main::-webkit-scrollbar,
+.content-overlay::-webkit-scrollbar {
+  width: var(--scroll-thumb-size);
+  height: var(--scroll-thumb-size);
+}
+
+.overflow-y-auto::-webkit-scrollbar-track,
+.overflow-y-scroll::-webkit-scrollbar-track,
+.scrollable::-webkit-scrollbar-track,
+.participants-container::-webkit-scrollbar-track,
+.public-combat-tracker::-webkit-scrollbar-track,
+.combat-sidebar::-webkit-scrollbar-track,
+.asset-grid::-webkit-scrollbar-track,
+.in-play-main::-webkit-scrollbar-track,
+.content-overlay::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+  border-radius: 999px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-y-scroll::-webkit-scrollbar-thumb,
+.scrollable::-webkit-scrollbar-thumb,
+.participants-container::-webkit-scrollbar-thumb,
+.public-combat-tracker::-webkit-scrollbar-thumb,
+.combat-sidebar::-webkit-scrollbar-thumb,
+.asset-grid::-webkit-scrollbar-thumb,
+.in-play-main::-webkit-scrollbar-thumb,
+.content-overlay::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-y-scroll::-webkit-scrollbar-thumb:hover,
+.scrollable::-webkit-scrollbar-thumb:hover,
+.participants-container::-webkit-scrollbar-thumb:hover,
+.public-combat-tracker::-webkit-scrollbar-thumb:hover,
+.combat-sidebar::-webkit-scrollbar-thumb:hover,
+.asset-grid::-webkit-scrollbar-thumb:hover,
+.in-play-main::-webkit-scrollbar-thumb:hover,
+.content-overlay::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scroll-thumb-hover);
+}
+
+/* Respect forced-colors high contrast modes */
+@media (forced-colors: active) {
+  .overflow-y-auto,
+  .overflow-y-scroll,
+  .scrollable,
+  .participants-container,
+  .public-combat-tracker,
+  .combat-sidebar,
+  .asset-grid,
+  .in-play-main,
+  .content-overlay {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+}

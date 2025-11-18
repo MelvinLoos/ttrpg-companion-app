@@ -172,7 +172,7 @@ async function generateQRCode() {
     try {
       const canvas = document.createElement('canvas')
       await QRCode.toCanvas(canvas, joinUrl.value, {
-        width: 200,
+        width: 240,
         margin: 2,
         color: {
           dark: '#000000',
@@ -374,8 +374,8 @@ onMounted(async () => {
 }
 
 .qr-code {
-  width: 180px;
-  height: 180px;
+  width: 240px;
+  height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;

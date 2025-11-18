@@ -42,7 +42,9 @@
   <!-- Combat Participants -->
   <div v-else class="mt-4">
     <h3 class="text-lg font-semibold text-white mb-4">Participants</h3>
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 items-stretch">
+    <!-- Scrollable container so long participant lists remain accessible -->
+    <div class="participants-container" aria-label="Combat participants list">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 items-stretch">
       <!-- Initiative Header -->
       <span class="flex items-center justify-center h-16 py-2 border-b border-white border-opacity-10 mb-2 text-sm font-medium text-stone-300">Initiative</span>
       <span class="flex items-center justify-center h-16 py-2 border-b border-white border-opacity-10 mb-2 text-sm font-medium text-stone-300">Name</span>
@@ -139,6 +141,7 @@
         </div>
   <!-- End participant row -->
       </template>
+      </div>
     </div>
   </div>
 </template>
@@ -219,4 +222,34 @@ function getStatusClass(status: string) {
 </script>
 
 <style scoped>
+/* Scrollable participants container - limit height and allow scrolling */
+.participants-container {
+  max-height: calc(100vh - 260px); /* header + padding allowance */
+  overflow-y: auto;
+  padding-right: 0.25rem; /* avoid content under scrollbar */
+}
+
+/* Themed scrollbar for this container (Chromium/WebKit) */
+.participants-container::-webkit-scrollbar {
+  width: 10px;
+}
+.participants-container::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.03);
+  border-radius: 999px;
+}
+.participants-container::-webkit-scrollbar-thumb {
+  background: rgba(59,130,246,0.36);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.participants-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(59,130,246,0.6);
+}
+
+/* Firefox scrollbar hint */
+.participants-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59,130,246,0.36) rgba(255,255,255,0.03);
+}
 </style>
