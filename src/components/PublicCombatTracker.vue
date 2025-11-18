@@ -13,8 +13,8 @@
       <p class="no-combat-text">No active combat</p>
     </div>
 
-    <!-- Initiative Order -->
-    <div v-else class="initiative-list">
+  <!-- Initiative Order -->
+  <div v-else class="initiative-list" ref="initiativeListRef">
       <div
         v-for="participant in combatStore.sortedParticipants"
         :key="participant.id"
@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch, ref, nextTick } from 'vue'
 import { useCombatStore } from '../stores/combat'
 
 interface Props {
@@ -83,6 +83,37 @@ interface Props {
 
 const props = defineProps<Props>()
 const combatStore = useCombatStore()
+
+// Ref to the scrollable initiative list container
+const initiativeListRef = ref<HTMLElement | null>(null)
+
+/**
+ * Scroll the initiative list so the element with class `current-turn` is visible.
+ * Only performs scrolling when the container actually overflows (has a scrollbar).
+ */
+const scrollToCurrent = async (behavior: ScrollBehavior = 'smooth') => {
+  await nextTick()
+  const container = initiativeListRef.value
+  if (!container) return
+
+  // Only scroll when there's overflow
+  if (container.scrollHeight <= container.clientHeight) return
+
+  const currentEl = container.querySelector('.current-turn') as HTMLElement | null
+  if (!currentEl) return
+
+  // Compute target so the current element is centered (or at least fully visible)
+  const elTop = currentEl.offsetTop
+  const elHeight = currentEl.offsetHeight
+  const target = Math.max(0, elTop - (container.clientHeight / 2) + (elHeight / 2))
+
+  try {
+    container.scrollTo({ top: target, behavior })
+  } catch (e) {
+    // Fallback for older browsers
+    container.scrollTop = target
+  }
+}
 
 // Helper functions for health status styling
 const getHealthBarClass = (status: string) => {
@@ -114,6 +145,16 @@ const loadCombatData = async () => {
 
 onMounted(loadCombatData)
 
+// Scroll when the component mounts (after data loads) and when the current turn changes
+onMounted(() => {
+  // Ensure we try to scroll after initial render
+  void scrollToCurrent('auto')
+})
+
+watch(() => combatStore.activeCombat?.current_turn_id, () => {
+  void scrollToCurrent('smooth')
+})
+
 watch(() => props.sessionId, loadCombatData)
 
 // Real-time subscriptions setup would go here
@@ -130,7 +171,7 @@ onUnmounted(() => {
   border-radius: 0.75rem;
   padding: 1rem;
   width: 100%;
-  max-height: 70vh;
+  max-height: 75vh;
   overflow-y: auto;
 }
 
