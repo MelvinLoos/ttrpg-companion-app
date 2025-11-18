@@ -1,5 +1,5 @@
 <template>
-  <div class="public-combat-tracker">
+  <div class="public-combat-tracker" ref="trackerContainerRef">
     <!-- Combat Header -->
     <div class="combat-header">
       <h3 class="combat-title">Combat</h3>
@@ -14,7 +14,7 @@
     </div>
 
   <!-- Initiative Order -->
-  <div v-else class="initiative-list" ref="initiativeListRef">
+  <div v-else class="initiative-list">
       <div
         v-for="participant in combatStore.sortedParticipants"
         :key="participant.id"
@@ -84,8 +84,8 @@ interface Props {
 const props = defineProps<Props>()
 const combatStore = useCombatStore()
 
-// Ref to the scrollable initiative list container
-const initiativeListRef = ref<HTMLElement | null>(null)
+// Ref to the scrollable tracker container (the element that may overflow)
+const trackerContainerRef = ref<HTMLElement | null>(null)
 
 /**
  * Scroll the initiative list so the element with class `current-turn` is visible.
@@ -93,7 +93,7 @@ const initiativeListRef = ref<HTMLElement | null>(null)
  */
 const scrollToCurrent = async (behavior: ScrollBehavior = 'smooth') => {
   await nextTick()
-  const container = initiativeListRef.value
+  const container = trackerContainerRef.value
   if (!container) return
 
   // Only scroll when there's overflow
