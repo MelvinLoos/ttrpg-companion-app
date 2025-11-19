@@ -137,9 +137,25 @@ const getHealthTextClass = (status: string) => {
 }
 
 // Load combat data when component mounts or session changes
+// Include a small retry to ensure participants are loaded when the
+// initial realtime subscription or DB query returns before participants
+// are available on some race conditions.
 const loadCombatData = async () => {
-  if (props.sessionId) {
-    await combatStore.fetchActiveCombat(props.sessionId)
+  if (!props.sessionId) return
+
+  await combatStore.fetchActiveCombat(props.sessionId)
+
+  // If we have an active combat but no participants yet, retry a few times.
+  // This covers cases where the combat row exists but participants are
+  // not immediately available due to timing or eventual-consistency.
+  if (combatStore.activeCombat && (!combatStore.participants || combatStore.participants.length === 0)) {
+    const maxRetries = 3
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      // small backoff
+      await new Promise((resolve) => setTimeout(resolve, 300 * attempt))
+      await combatStore.fetchActiveCombat(props.sessionId)
+      if (combatStore.participants && combatStore.participants.length > 0) break
+    }
   }
 }
 

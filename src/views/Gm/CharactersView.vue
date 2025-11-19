@@ -56,7 +56,7 @@
 
     <!-- Create/Edit character dialog -->
     <div v-if="showCreateDialog" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-      <div class="bg-stone-800 rounded-xl w-full max-w-md border border-stone-700 shadow-2xl p-8 h-svh">
+      <div class="bg-stone-800 rounded-xl w-full max-w-xl border border-stone-700 shadow-2xl p-8 h-svh max-h-max">
         <h3 class="text-2xl font-bold text-white mb-6">{{ editingCharacter ? 'Edit Character' : 'Create Character' }}
         </h3>
         <form @submit.prevent="handleSubmit" class="space-y-6">
@@ -83,7 +83,7 @@
                 <div v-else class="w-32 h-32 rounded-lg bg-stone-900 flex items-center justify-center text-stone-500 text-sm">No portrait selected</div>
 
                 <!-- Portrait Picker Grid -->
-                <div v-if="portraitAssets.length > 0" class="portrait-picker-grid grid grid-cols-3 gap-2 mt-2 overflow-y-auto" style="max-height: 240px;">
+                <div v-if="portraitAssets.length > 0" class="portrait-picker-grid grid grid-cols-6 mt-2 overflow-y-auto w-full" style="max-height: 240px;">
                   <button v-for="portrait in portraitAssets" :key="portrait.id"
                     type="button"
                     @click="selectPortrait(portrait)"

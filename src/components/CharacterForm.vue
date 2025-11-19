@@ -19,7 +19,7 @@
           <img v-else-if="localPortraitUrl" :src="localPortraitUrl" alt="Current portrait" class="w-32 h-32 rounded-lg object-cover bg-stone-900" />
           <div v-else class="w-32 h-32 rounded-lg bg-stone-900 flex items-center justify-center text-stone-500 text-sm">No portrait selected</div>
           <!-- Portrait Picker Grid -->
-          <div v-if="portraitAssets.length > 0" class="portrait-picker-grid grid grid-cols-3 gap-2 mt-2 overflow-y-auto" style="max-height: 240px;">
+          <div v-if="portraitAssets.length > 0" class="portrait-picker-grid grid grid-cols-4 gap-2 mt-2 overflow-y-auto" style="max-height: 240px;">
             <button v-for="portrait in portraitAssets" :key="portrait.id"
               type="button"
               @click="selectPortrait(portrait)"
