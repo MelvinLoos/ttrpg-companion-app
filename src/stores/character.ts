@@ -87,7 +87,7 @@ export const useCharacterStore = defineStore('character', () => {
       return data.publicUrl
     } catch (error) {
       console.error('[character store] uploadPortrait failed:', error)
-      throw new Error(error instanceof Error ? error.message : 'Failed to upload portrait')
+      throw error instanceof Error ? error : new Error('Failed to upload portrait')
     }
   }
 

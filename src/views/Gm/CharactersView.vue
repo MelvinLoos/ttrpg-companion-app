@@ -189,12 +189,12 @@ function editCharacter(character: PremadeCharacter) {
   }
   if (typeof character.stats_json === 'object' && character.stats_json !== null && 'STR' in character.stats_json) {
     stats.value = {
-      STR: Number(character.stats_json.STR) ?? 10,
-      DEX: Number(character.stats_json.DEX) ?? 10,
-      CON: Number(character.stats_json.CON) ?? 10,
-      INT: Number(character.stats_json.INT) ?? 10,
-      WIS: Number(character.stats_json.WIS) ?? 10,
-      CHA: Number(character.stats_json.CHA) ?? 10
+      STR: character.stats_json.STR != null ? Number(character.stats_json.STR) : 10,
+      DEX: character.stats_json.DEX != null ? Number(character.stats_json.DEX) : 10,
+      CON: character.stats_json.CON != null ? Number(character.stats_json.CON) : 10,
+      INT: character.stats_json.INT != null ? Number(character.stats_json.INT) : 10,
+      WIS: character.stats_json.WIS != null ? Number(character.stats_json.WIS) : 10,
+      CHA: character.stats_json.CHA != null ? Number(character.stats_json.CHA) : 10
     }
   } else {
     stats.value = {
@@ -250,7 +250,7 @@ async function handleSubmit() {
       )
     }
     closeDialog()
-  } catch (error) {
+  } catch {
     // Error is handled by the store
   }
 }
@@ -259,7 +259,7 @@ async function deleteCharacter(id: string) {
   if (confirm('Are you sure you want to delete this character? This cannot be undone.')) {
     try {
       await store.deleteCharacter(id)
-    } catch (error) {
+    } catch {
       // Error is handled by the store
     }
   }

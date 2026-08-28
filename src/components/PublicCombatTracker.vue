@@ -109,7 +109,7 @@ const scrollToCurrent = async (behavior: ScrollBehavior = 'smooth') => {
 
   try {
     container.scrollTo({ top: target, behavior })
-  } catch (e) {
+  } catch {
     // Fallback for older browsers
     container.scrollTop = target
   }

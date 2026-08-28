@@ -69,7 +69,7 @@ async function handleSubmit() {
       const redirect = route.query.redirect as string || '/gm'
       router.push(redirect)
     }
-  } catch (e) {
+  } catch {
     error.value = 'Failed to sign in. Please check your credentials.'
   } finally {
     loading.value = false

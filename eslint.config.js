@@ -16,6 +16,15 @@ export default tseslint.config(
     },
   },
   {
+    // TypeScript already checks for undefined variables — no-undef is
+    // redundant and causes false positives on TS types (e.g. ScrollBehavior,
+    // HTMLElement, File, Event) that are not runtime globals.
+    files: ['**/*.ts', '**/*.tsx', '**/*.vue'],
+    rules: {
+      'no-undef': 'off',
+    },
+  },
+  {
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'warn',

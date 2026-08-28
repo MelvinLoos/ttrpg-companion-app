@@ -24,7 +24,7 @@ async function createStorageBuckets() {
 
   for (const bucket of buckets) {
     try {
-      const { data, error } = await supabase.storage.createBucket(bucket.id, {
+      const { error } = await supabase.storage.createBucket(bucket.id, {
         public: bucket.public,
         allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
         fileSizeLimit: 10 * 1024 * 1024 // 10MB
