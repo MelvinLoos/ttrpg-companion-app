@@ -1,0 +1,24 @@
+-- Security fix (Supabase advisory: rls_disabled_in_public + sensitive_columns_exposed)
+--
+-- Restore Row Level Security on public.session_assets.
+--
+-- RLS was disabled in 20251108000001_temporary_disable_rls.sql as a dev-only
+-- workaround for testing the upload flow (commit 4d1d2a7), and was never
+-- re-enabled. With RLS off, the `anon` role (which is granted full
+-- select/insert/update/delete on this table in the init schema) can read,
+-- modify, and delete every asset row, exposing gm_id, public_url,
+-- storage_path and friendly_name through the public API.
+--
+-- The intended access model is already fully encoded in the existing
+-- policies created by earlier migrations, so re-enabling RLS is safe and
+-- requires no application code changes:
+--   - assets_public_read                    -> SELECT for everyone (player screens)
+--   - assets_owner_select                   -> SELECT for the owning GM
+--   - assets_owner_insert                   -> INSERT for authenticated owner (gm_id = auth.uid())
+--   - assets_owner_update                   -> UPDATE for authenticated owner
+--   - assets_owner_delete                   -> DELETE for authenticated owner
+--
+-- The frontend (src/stores/asset.ts, src/stores/character.ts) only ever
+-- performs authenticated writes, so this migration restores security without
+-- breaking the upload/delete flows.
+ALTER TABLE public.session_assets ENABLE ROW LEVEL SECURITY;
