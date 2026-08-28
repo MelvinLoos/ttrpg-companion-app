@@ -11,6 +11,7 @@
     "format": "prettier --write \"src/**/*.{ts,vue,css}\" ",
     "typecheck": "vue-tsc -b --noEmit",
     "create-buckets": "tsx scripts/db/create-buckets.ts",
+    "test:rls:assets": "node scripts/tests/session-assets-rls.mjs",
     "ruler:apply": "npx @intellectronica/ruler apply",
     "postinstall": "npx @intellectronica/ruler apply"
   },
