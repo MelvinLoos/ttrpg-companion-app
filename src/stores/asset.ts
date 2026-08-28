@@ -56,6 +56,7 @@ export const useAssetStore = defineStore('asset', () => {
       state.value.assets = (data || []) as Asset[]
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to fetch assets'
+      console.error('[asset store] fetchAssets failed:', error)
     } finally {
       state.value.loading = false
     }
@@ -113,6 +114,7 @@ export const useAssetStore = defineStore('asset', () => {
       return asset
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to upload asset'
+      console.error('[asset store] uploadAsset failed:', error)
       return null
     } finally {
       state.value.loading = false
@@ -142,6 +144,7 @@ export const useAssetStore = defineStore('asset', () => {
       state.value.assets = state.value.assets.filter(a => a.id !== asset.id)
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to delete asset'
+      console.error('[asset store] deleteAsset failed:', error)
       throw error
     } finally {
       state.value.loading = false

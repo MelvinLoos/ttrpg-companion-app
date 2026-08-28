@@ -60,6 +60,7 @@ export const useSessionStore = defineStore('session', () => {
       state.value.sessions = (data || []).map(mapSession)
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to fetch sessions'
+      console.error('[session store] fetchSessions failed:', error)
     } finally {
       state.value.loading = false
     }
@@ -92,6 +93,7 @@ export const useSessionStore = defineStore('session', () => {
       return data
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to create session'
+      console.error('[session store] createSession failed:', error)
       return null
     } finally {
       state.value.loading = false
@@ -122,6 +124,7 @@ export const useSessionStore = defineStore('session', () => {
       return data
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to update session'
+      console.error('[session store] updateSession failed:', error)
       return null
     } finally {
       state.value.loading = false
@@ -147,6 +150,7 @@ export const useSessionStore = defineStore('session', () => {
       delete state.value.characters[id]
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to delete session'
+      console.error('[session store] deleteSession failed:', error)
     } finally {
       state.value.loading = false
     }
@@ -178,6 +182,7 @@ export const useSessionStore = defineStore('session', () => {
       state.value.characters[sessionId] = data
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to fetch characters'
+      console.error('[session store] fetchSessionCharacters failed:', error)
     }
   }
 

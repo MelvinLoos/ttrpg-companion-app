@@ -84,6 +84,7 @@ export const useCombatStore = defineStore('combat', () => {
       monsters.value = data || []
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch monsters'
+      console.error('[combat store] fetchMonsters failed:', err)
     } finally {
       isLoading.value = false
     }
@@ -102,6 +103,7 @@ export const useCombatStore = defineStore('combat', () => {
       return data
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to create monster'
+      console.error('[combat store] createMonster failed:', err)
       throw err
     }
   }
@@ -124,6 +126,7 @@ export const useCombatStore = defineStore('combat', () => {
       return data
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update monster'
+      console.error('[combat store] updateMonster failed:', err)
       throw err
     }
   }
@@ -140,6 +143,7 @@ export const useCombatStore = defineStore('combat', () => {
       monsters.value = monsters.value.filter((m: any) => m.id !== id)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to delete monster'
+      console.error('[combat store] deleteMonster failed:', err)
       throw err
     }
   }
@@ -162,6 +166,7 @@ export const useCombatStore = defineStore('combat', () => {
       encounters.value = data || []
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch encounters'
+      console.error('[combat store] fetchEncounters failed:', err)
     } finally {
       isLoading.value = false
     }
@@ -185,6 +190,7 @@ export const useCombatStore = defineStore('combat', () => {
       return data
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to create encounter'
+      console.error('[combat store] createEncounter failed:', err)
       throw err
     }
   }
@@ -210,6 +216,7 @@ export const useCombatStore = defineStore('combat', () => {
       return data
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update encounter'
+      console.error('[combat store] updateEncounter failed:', err)
       throw err
     }
   }
@@ -226,6 +233,7 @@ export const useCombatStore = defineStore('combat', () => {
       encounters.value = encounters.value.filter((e: any) => e.id !== id)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to delete encounter'
+      console.error('[combat store] deleteEncounter failed:', err)
       throw err
     }
   }
@@ -254,6 +262,7 @@ export const useCombatStore = defineStore('combat', () => {
       return data
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to add monster to encounter'
+      console.error('[combat store] addMonsterToEncounter failed:', err)
       throw err
     }
   }
@@ -281,6 +290,7 @@ export const useCombatStore = defineStore('combat', () => {
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to remove monster from encounter'
+      console.error('[combat store] removeMonsterFromEncounter failed:', err)
       throw err
     }
   }
@@ -442,6 +452,7 @@ export const useCombatStore = defineStore('combat', () => {
       return combat
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to start combat'
+      console.error('[combat store] startCombat failed:', err)
       throw err
     } finally {
       isLoading.value = false
@@ -458,11 +469,13 @@ export const useCombatStore = defineStore('combat', () => {
         .eq('id', activeCombat.value.id)
 
       if (endError) throw endError
-      
+      // Clear local state regardless — if data is null, the row was already gone
+      // so clean up to keep client and server in sync
       activeCombat.value = null
       participants.value = []
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to end combat'
+      console.error('[combat store] endCombat failed:', err)
       throw err
     }
   }
@@ -482,6 +495,7 @@ export const useCombatStore = defineStore('combat', () => {
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update initiative'
+      console.error('[combat store] updateParticipantInitiative failed:', err)
       throw err
     }
   }
@@ -503,6 +517,7 @@ export const useCombatStore = defineStore('combat', () => {
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update health'
+      console.error('[combat store] updateParticipantHealth failed:', err)
       throw err
     }
   }
@@ -520,22 +535,31 @@ export const useCombatStore = defineStore('combat', () => {
     const roundIncrement = nextIndex === 0 ? 1 : 0
     
     try {
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('active_combats')
         .update({ 
           current_turn_id: nextParticipant.id,
           round_number: activeCombat.value.round_number + roundIncrement
         })
         .eq('id', activeCombat.value.id)
+        .select()
+        .maybeSingle()
 
       if (updateError) throw updateError
       
-      activeCombat.value.current_turn_id = nextParticipant.id
-      if (roundIncrement) {
-        activeCombat.value.round_number += 1
+      // Use returned data to update local state if the update succeeded
+      // If data is null, the combat may have been ended — still apply optimistic update
+      if (data) {
+        activeCombat.value = { ...activeCombat.value, ...data }
+      } else {
+        activeCombat.value.current_turn_id = nextParticipant.id
+        if (roundIncrement) {
+          activeCombat.value.round_number += 1
+        }
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to advance turn'
+      console.error('[combat store] nextTurn failed:', err)
       throw err
     }
   }
@@ -574,6 +598,7 @@ export const useCombatStore = defineStore('combat', () => {
       subscribeToCombatUpdates(sessionId)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch active combat'
+      console.error('[combat store] fetchActiveCombat failed:', err)
     }
   }
 
@@ -627,7 +652,7 @@ export const useCombatStore = defineStore('combat', () => {
       
       participants.value = (combatParticipants || []).map((p: any) => enhanceParticipant(p))
     } catch (err) {
-      console.error('Failed to fetch participants for combat:', err)
+      console.error('[combat store] fetchParticipantsForCombat failed:', err)
     }
   }
 
@@ -886,6 +911,7 @@ export const useCombatStore = defineStore('combat', () => {
       participants.value = participants.value.filter((p: any) => p.id !== participantId)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to remove participant'
+      console.error('[combat store] removeParticipant failed:', err)
       throw err
     }
   }

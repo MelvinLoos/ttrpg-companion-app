@@ -41,6 +41,7 @@ export const useCharacterStore = defineStore('character', () => {
   state.value.premadeCharacters = mapped as unknown as PremadeCharacter[]
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to fetch characters'
+      console.error('[character store] fetchPremadeCharacters failed:', error)
     } finally {
       state.value.loading = false
     }
@@ -85,6 +86,7 @@ export const useCharacterStore = defineStore('character', () => {
 
       return data.publicUrl
     } catch (error) {
+      console.error('[character store] uploadPortrait failed:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to upload portrait')
     }
   }
@@ -126,6 +128,7 @@ export const useCharacterStore = defineStore('character', () => {
       return data
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to create character'
+      console.error('[character store] createCharacter failed:', error)
       return null
     } finally {
       state.value.loading = false
@@ -157,6 +160,7 @@ export const useCharacterStore = defineStore('character', () => {
       return data
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to update character'
+      console.error('[character store] updateCharacter failed:', error)
       return null
     } finally {
       state.value.loading = false
@@ -178,6 +182,7 @@ export const useCharacterStore = defineStore('character', () => {
       state.value.premadeCharacters = state.value.premadeCharacters.filter((c: PremadeCharacter) => c.id !== id)
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : 'Failed to delete character'
+      console.error('[character store] deleteCharacter failed:', error)
       throw error
     } finally {
       state.value.loading = false

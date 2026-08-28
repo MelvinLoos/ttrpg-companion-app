@@ -25,7 +25,7 @@
             Open Player Screen
           </button>
         </div>
-        <p v-if="sessionStore.state.sessions.length === 0" class="no-sessions">
+        <p v-if="sessionStore.state.sessions.length === 0 && !sessionStore.state.loading && !sessionStore.state.error" class="no-sessions">
           <router-link to="/gm/sessions">Create a session</router-link> first to get started.
         </p>
       </div>
@@ -48,7 +48,17 @@
     <!-- Make content area scrollable while keeping header fixed -->
     <div class="flex-1 overflow-y-auto pb-20">
 
-      <div v-if="selectedSessionId === 'none'"
+      <!-- Error state from failed session fetch -->
+      <div v-if="sessionStore.state.error"
+        class="mx-6 my-4 bg-red-900/60 border border-red-700 rounded-lg p-4 text-red-100">
+        <h3 class="font-semibold mb-1">⚠️ Could not load sessions</h3>
+        <p class="text-sm">{{ sessionStore.state.error }}</p>
+        <p class="text-xs text-red-200 mt-2">
+          Check the browser console (F12) for details and verify your Supabase project is running.
+        </p>
+      </div>
+
+      <div v-else-if="selectedSessionId === 'none'"
         class="flex flex-col items-center justify-center text-center text-stone-400 py-16">
         <h3 class="text-xl font-bold mb-2">Player Join Disabled</h3>
         <p>No active session - players cannot join at this time.</p>

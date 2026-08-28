@@ -147,10 +147,25 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import { useCombatStore } from '../stores/combat'
 import type { CombatParticipantWithType } from '../types/combat'
 
+const props = defineProps<{
+  sessionId: string
+}>()
+
 const combatStore = useCombatStore()
+
+// Initialize combat state on mount
+onMounted(async () => {
+  await combatStore.fetchActiveCombat(props.sessionId)
+})
+
+// Clean up realtime subscriptions on unmount
+onUnmounted(() => {
+  combatStore.unsubscribeFromCombatUpdates()
+})
 
 // Advance turn
 const nextTurn = async () => {
