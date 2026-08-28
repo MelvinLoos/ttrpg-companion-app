@@ -1,10 +1,15 @@
 // Create user via Supabase admin API
 import { createClient } from '@supabase/supabase-js'
 
-// Use service role key for admin operations
-const supabaseUrl = 'http://127.0.0.1:54321'
-const serviceRoleKey = 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz' // Service role key from supabase status
-const anonKey = 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH' // Anon key
+// Use service role key for admin operations (from `supabase status`)
+const supabaseUrl = process.env.SUPABASE_URL || 'http://127.0.0.1:54321'
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const anonKey = process.env.SUPABASE_ANON_KEY
+
+if (!serviceRoleKey || !anonKey) {
+  console.error('Missing env vars: SUPABASE_SERVICE_ROLE_KEY and SUPABASE_ANON_KEY')
+  process.exit(1)
+}
 
 console.log('👤 Creating test user with admin client...')
 
