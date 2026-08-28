@@ -1,0 +1,31 @@
+# Ruler configuration for TTRPG Companion App
+# See: https://github.com/intellectronica/ruler
+
+# Default agents to run when --agents is not specified
+default_agents = ["cline", "copilot", "claude"]
+
+# --- Global MCP Server Configuration ---
+[mcp]
+enabled = false
+
+# --- Gitignore Configuration ---
+[gitignore]
+# Let Ruler manage the .gitignore block for generated agent files
+enabled = true
+# Write to .gitignore (not .git/info/exclude) since we want Option B:
+# generated files are gitignored, not committed
+local = false
+
+# --- Backup Configuration ---
+[backup]
+enabled = true
+
+# --- Agent-Specific Configurations ---
+[agents.cline]
+enabled = true
+
+[agents.copilot]
+enabled = true
+
+[agents.claude]
+enabled = true
