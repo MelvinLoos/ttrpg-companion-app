@@ -93,18 +93,32 @@ export const router = createRouter({
 
 // Navigation guard for protected routes
 router.beforeEach(async (to) => {
-  // TEMPORARY: Disable auth guard for development testing
-  // TODO: Re-enable authentication after combat system testing is complete
-  return
-  
-  const authStore = useAuthStore()
+  // Allow dev mode to skip authentication for testing via env flag.
+  // This replaces the hardcoded early return that silently disabled auth.
+  const skipAuth = import.meta.env.VITE_SKIP_AUTH === 'true'
 
-  // Wait for auth initialization to complete if it's still loading
-  while (authStore.loading) {
-    await new Promise(resolve => setTimeout(resolve, 10))
-  }
+  if (to.meta.requiresAuth) {
+    if (skipAuth) {
+      console.log(
+        `%c🔓 [Router] Auth guard skipped for ${to.fullPath} (VITE_SKIP_AUTH=true)`,
+        'color: #ff9800;'
+      )
+      return
+    }
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return { name: 'sign-in', query: { redirect: to.fullPath } }
+    const authStore = useAuthStore()
+
+    // Wait for auth initialization to complete if it's still loading
+    while (authStore.loading) {
+      await new Promise(resolve => setTimeout(resolve, 10))
+    }
+
+    if (!authStore.isAuthenticated) {
+      console.log(
+        `%c🔒 [Router] Route ${to.fullPath} requires auth — redirecting to /sign-in`,
+        'color: #e94560;'
+      )
+      return { name: 'sign-in', query: { redirect: to.fullPath } }
+    }
   }
 })
